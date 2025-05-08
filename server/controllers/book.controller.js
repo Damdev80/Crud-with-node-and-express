@@ -24,17 +24,47 @@ export const getBookById = async (req, res) => {
 // Crear libro
 export const createBook = async (req, res) => {
   try {
-    const newBook = await Book.create(req.body);
-    res.status(201).json({ success: true, data: newBook });
+    const { title, description, publication_date, category_id, author_id } = req.body;
+
+    // Si la imagen se sube, la ruta de la imagen será guardada en la base de datos
+    const coverImagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    // Crear el libro en la base de datos
+    const newBook = await Book.create({
+      title,
+      description,
+      publication_date,
+      category_id,
+      author_id,
+      cover_image: coverImagePath,  // Guardamos la ruta de la imagen
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Libro creado con éxito',
+      data: newBook,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al crear libro', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear libro',
+      error: error.message,
+    });
   }
 };
 
 // Actualizar libro
 export const updateBook = async (req, res) => {
   try {
-    const updated = await Book.update(req.params.id, req.body);
+    // Si se sube una nueva imagen, actualiza la ruta
+    let coverImagePath = req.body.cover_image;
+    if (req.file) {
+      coverImagePath = `/uploads/${req.file.filename}`;
+    }
+    const updated = await Book.update(req.params.id, {
+      ...req.body,
+      cover_image: coverImagePath
+    });
     if (!updated) return res.status(404).json({ success: false, message: 'No se actualizó (no existe)' });
     res.json({ success: true, data: updated });
   } catch (error) {

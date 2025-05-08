@@ -1,4 +1,3 @@
-// models/book.model.js
 import pool from '../config/db.js';
 
 class Book {
@@ -11,6 +10,7 @@ class Book {
     this.isbn = book.isbn;
     this.available_copies = book.available_copies;
     this.description = book.description;
+    this.cover_image = book.cover_image;  // Añadido para almacenar la ruta de la imagen
   }
 
   // Obtener todos los libros
@@ -38,7 +38,7 @@ class Book {
   static async create(newBook) {
     try {
       const [result] = await pool.query(
-        'INSERT INTO books (title, author_id, category_id, publication_year, isbn, available_copies, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO books (title, author_id, category_id, publication_year, isbn, available_copies, description, cover_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           newBook.title,
           newBook.author_id,
@@ -46,7 +46,8 @@ class Book {
           newBook.publication_year,
           newBook.isbn,
           newBook.available_copies,
-          newBook.description
+          newBook.description,
+          newBook.cover_image // Guardamos la ruta de la imagen aquí
         ]
       );
       return new Book({
@@ -62,7 +63,7 @@ class Book {
   static async update(id, bookData) {
     try {
       const [result] = await pool.query(
-        'UPDATE books SET title = ?, author_id = ?, category_id = ?, publication_year = ?, isbn = ?, available_copies = ?, description = ? WHERE book_id = ?',
+        'UPDATE books SET title = ?, author_id = ?, category_id = ?, publication_year = ?, isbn = ?, available_copies = ?, description = ?, cover_image = ? WHERE book_id = ?',
         [
           bookData.title,
           bookData.author_id,
@@ -71,6 +72,7 @@ class Book {
           bookData.isbn,
           bookData.available_copies,
           bookData.description,
+          bookData.cover_image, // Actualizamos la ruta de la imagen aquí
           id
         ]
       );
