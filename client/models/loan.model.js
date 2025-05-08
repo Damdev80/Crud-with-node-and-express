@@ -1,5 +1,5 @@
 // models/loan.model.js
-import db from '../config/db.js';
+import pool from '../config/db.js';
 
 class Loan {
   constructor(loan) {
@@ -15,7 +15,7 @@ class Loan {
   // Obtener todos los préstamos
   static async getAll() {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM loans');
+      const [rows] = await pool.query('SELECT * FROM loans');
       return rows.map(row => new Loan(row));
     } catch (error) {
       throw error;
@@ -25,7 +25,7 @@ class Loan {
   // Obtener un préstamo por ID
   static async getById(id) {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM loans WHERE loan_id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM loans WHERE loan_id = ?', [id]);
       if (rows.length === 0) return null;
       return new Loan(rows[0]);
     } catch (error) {
@@ -37,7 +37,7 @@ class Loan {
   static async create(newLoan) {
     try {
       // Iniciar transacción
-      const connection = await db();
+      const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
@@ -49,6 +49,7 @@ class Loan {
 
         if (bookRows.length === 0 || bookRows[0].available_copies <= 0) {
           await connection.rollback();
+          connection.release();
           throw new Error('El libro no está disponible para préstamo');
         }
 
@@ -71,6 +72,7 @@ class Loan {
         );
 
         await connection.commit();
+        connection.release();
 
         return new Loan({
           loan_id: result.insertId,
@@ -80,6 +82,7 @@ class Loan {
         });
       } catch (err) {
         await connection.rollback();
+        connection.release();
         throw err;
       }
     } catch (error) {
@@ -90,7 +93,7 @@ class Loan {
   // Actualizar un préstamo existente
   static async update(id, loanData) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'UPDATE loans SET book_id = ?, user_id = ?, loan_date = ?, return_date = ?, actual_return_date = ?, status = ? WHERE loan_id = ?',
         [
           loanData.book_id,
@@ -118,7 +121,7 @@ class Loan {
   static async returnBook(id) {
     try {
       // Iniciar transacción
-      const connection = await db();
+      const connection = await pool.getConnection();
       await connection.beginTransaction();
 
       try {
@@ -130,6 +133,7 @@ class Loan {
 
         if (loanRows.length === 0) {
           await connection.rollback();
+          connection.release();
           throw new Error('Préstamo no encontrado');
         }
 
@@ -137,6 +141,7 @@ class Loan {
 
         if (loan.status === 'returned') {
           await connection.rollback();
+          connection.release();
           throw new Error('Este libro ya ha sido devuelto');
         }
 
@@ -153,10 +158,12 @@ class Loan {
         );
 
         await connection.commit();
+        connection.release();
 
         return true;
       } catch (err) {
         await connection.rollback();
+        connection.release();
         throw err;
       }
     } catch (error) {
@@ -167,7 +174,7 @@ class Loan {
   // Eliminar un préstamo
   static async delete(id) {
     try {
-      const [result] = await (await db()).query('DELETE FROM loans WHERE loan_id = ?', [id]);
+      const [result] = await pool.query('DELETE FROM loans WHERE loan_id = ?', [id]);
       return result.affectedRows > 0;
     } catch (error) {
       throw error;
@@ -177,7 +184,7 @@ class Loan {
   // Obtener préstamos con detalles de libros y usuarios
   static async getAllWithDetails() {
     try {
-      const [rows] = await (await db()).query(`
+      const [rows] = await pool.query(`
         SELECT l.*, b.title AS book_title, u.first_name, u.last_name, u.email
         FROM loans l
         JOIN books b ON l.book_id = b.book_id
@@ -193,7 +200,7 @@ class Loan {
   static async getOverdue() {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const [rows] = await (await db()).query(`
+      const [rows] = await pool.query(`
         SELECT l.*, b.title AS book_title, u.first_name, u.last_name, u.email
         FROM loans l
         JOIN books b ON l.book_id = b.book_id

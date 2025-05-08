@@ -47,6 +47,7 @@ export const getAuthorById = async (req, res) => {
 // Crear un nuevo autor
 export const createAuthor = async (req, res) => {
   try {
+    console.log('Cuerpo de la solicitud:', req.body);
     const { first_name, last_name, birth_date, nationality } = req.body;
     
     // Validación básica
@@ -70,6 +71,7 @@ export const createAuthor = async (req, res) => {
       data: newAuthor
     });
   } catch (error) {
+    console.error('Error al crear autor:', error);  
     res.status(500).json({
       success: false,
       message: 'Error al crear el autor',

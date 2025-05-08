@@ -1,4 +1,4 @@
-import db from '../config/db.js';
+import pool from '../config/db.js';
 
 class Category {
   constructor(category) {
@@ -10,7 +10,7 @@ class Category {
   // Obtener todas las categorías
   static async getAll() {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM categories');
+      const [rows] = await pool.query('SELECT * FROM categories');
       return rows.map(row => new Category(row));
     } catch (error) {
       throw error;
@@ -20,7 +20,7 @@ class Category {
   // Obtener una categoría por ID
   static async getById(id) {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM categories WHERE category_id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM categories WHERE category_id = ?', [id]);
       if (rows.length === 0) return null;
       return new Category(rows[0]);
     } catch (error) {
@@ -31,7 +31,7 @@ class Category {
   // Crear una nueva categoría
   static async create(newCategory) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'INSERT INTO categories (name, description) VALUES (?, ?)',
         [newCategory.name, newCategory.description]
       );
@@ -47,7 +47,7 @@ class Category {
   // Actualizar una categoría existente
   static async update(id, categoryData) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'UPDATE categories SET name = ?, description = ? WHERE category_id = ?',
         [categoryData.name, categoryData.description, id]
       );
@@ -66,7 +66,7 @@ class Category {
   // Eliminar una categoría
   static async delete(id) {
     try {
-      const [result] = await (await db()).query('DELETE FROM categories WHERE category_id = ?', [id]);
+      const [result] = await pool.query('DELETE FROM categories WHERE category_id = ?', [id]);
       return result.affectedRows > 0;
     } catch (error) {
       throw error;

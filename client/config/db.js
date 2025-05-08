@@ -1,8 +1,7 @@
 import mysql from 'mysql2/promise';
 
-
 const config = {
-    host: '127.0.0.1',
+    host: 'localhost',
     user: 'root',
     password: '',
     database: 'library',
@@ -21,4 +20,4 @@ export async function  db()  {
     }
 }
 
-export default db;
+export default pool;

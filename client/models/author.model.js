@@ -1,11 +1,11 @@
 // models/author.model.js
-import db from '../config/db.js';
+import pool from '../config/db.js';
 
 class Author {
   // Obtener todos los autores
   static async getAll() {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM authors');
+      const [rows] = await pool.query('SELECT * FROM authors');
       return rows;
     } catch (error) {
       throw error;
@@ -15,7 +15,7 @@ class Author {
   // Obtener un autor por ID
   static async getById(id) {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM authors WHERE author_id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM authors WHERE author_id = ?', [id]);
       return rows[0];
     } catch (error) {
       throw error;
@@ -25,7 +25,7 @@ class Author {
   // Crear un nuevo autor
   static async create(author) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'INSERT INTO authors (first_name, last_name, birth_date, nationality) VALUES (?, ?, ?, ?)',
         [author.first_name, author.last_name, author.birth_date, author.nationality]
       );
@@ -38,7 +38,7 @@ class Author {
   // Actualizar un autor existente
   static async update(id, author) {
     try {
-      await (await db()).query(
+      await pool.query(
         'UPDATE authors SET first_name = ?, last_name = ?, birth_date = ?, nationality = ? WHERE author_id = ?',
         [author.first_name, author.last_name, author.birth_date, author.nationality, id]
       );
@@ -51,7 +51,7 @@ class Author {
   // Eliminar un autor
   static async delete(id) {
     try {
-      const [result] = await (await db()).query('DELETE FROM authors WHERE author_id = ?', [id]);
+      const [result] = await pool.query('DELETE FROM authors WHERE author_id = ?', [id]);
       return result.affectedRows > 0;
     } catch (error) {
       throw error;
@@ -61,7 +61,7 @@ class Author {
   // Obtener los libros de un autor
   static async getBooks(id) {
     try {
-      const [rows] = await (await db()).query(
+      const [rows] = await pool.query(
         'SELECT * FROM books WHERE author_id = ?',
         [id]
       );

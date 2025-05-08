@@ -22,6 +22,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.post('/with-image', upload.single('cover'), createBookWithImage);
+
 router.post('/', async (req, res) => {
   try {
     const newBook = await Book.create(req.body);

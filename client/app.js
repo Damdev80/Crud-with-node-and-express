@@ -7,10 +7,12 @@ import loanRoutes from './routes/loan.routes.js';
 import userRoutes from './routes/user.routes.js';
 
 const app = express();
+app.use(cors());
+app.use(express.json());
+
 const PORT = process.env.PORT ?? 3000;
 
-app.use(express.json());
-app.use(cors());
+
 
 // Rutas de autores
 app.use('/api/authors', authorRoutes);

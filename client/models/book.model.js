@@ -1,5 +1,5 @@
 // models/book.model.js
-import db from '../config/db.js';
+import pool from '../config/db.js';
 
 class Book {
   constructor(book) {
@@ -16,7 +16,7 @@ class Book {
   // Obtener todos los libros
   static async getAll() {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM books');
+      const [rows] = await pool.query('SELECT * FROM books');
       return rows.map(row => new Book(row));
     } catch (error) {
       throw error;
@@ -26,7 +26,7 @@ class Book {
   // Obtener un libro por ID
   static async getById(id) {
     try {
-      const [rows] = await (await db()).query('SELECT * FROM books WHERE book_id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM books WHERE book_id = ?', [id]);
       if (rows.length === 0) return null;
       return new Book(rows[0]);
     } catch (error) {
@@ -37,7 +37,7 @@ class Book {
   // Crear un nuevo libro
   static async create(newBook) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'INSERT INTO books (title, author_id, category_id, publication_year, isbn, available_copies, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           newBook.title,
@@ -61,7 +61,7 @@ class Book {
   // Actualizar un libro existente
   static async update(id, bookData) {
     try {
-      const [result] = await (await db()).query(
+      const [result] = await pool.query(
         'UPDATE books SET title = ?, author_id = ?, category_id = ?, publication_year = ?, isbn = ?, available_copies = ?, description = ? WHERE book_id = ?',
         [
           bookData.title,
@@ -89,7 +89,7 @@ class Book {
   // Eliminar un libro
   static async delete(id) {
     try {
-      const [result] = await (await db()).query('DELETE FROM books WHERE book_id = ?', [id]);
+      const [result] = await pool.query('DELETE FROM books WHERE book_id = ?', [id]);
       return result.affectedRows > 0;
     } catch (error) {
       throw error;
@@ -99,7 +99,7 @@ class Book {
   // Obtener libros con detalles de autor y categoría
   static async getAllWithDetails() {
     try {
-      const [rows] = await (await db()).query(`
+      const [rows] = await pool.query(`
         SELECT b.*, a.first_name, a.last_name, c.name as category_name
         FROM books b
         LEFT JOIN authors a ON b.author_id = a.author_id
@@ -114,7 +114,7 @@ class Book {
   // Buscar libros por título
   static async searchByTitle(title) {
     try {
-      const [rows] = await (await db()).query(
+      const [rows] = await pool.query(
         'SELECT * FROM books WHERE title LIKE ?',
         [`%${title}%`]
       );
@@ -127,7 +127,7 @@ class Book {
   // Verificar disponibilidad de un libro
   static async checkAvailability(id) {
     try {
-      const [rows] = await (await db()).query(
+      const [rows] = await pool.query(
         'SELECT available_copies FROM books WHERE book_id = ?',
         [id]
       );
