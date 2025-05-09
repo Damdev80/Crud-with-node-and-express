@@ -12,7 +12,8 @@ app.use(express.json());
 
 const PORT = process.env.PORT ?? 3000;
 
-
+// Servir archivos estáticos de la carpeta uploads
+app.use('/uploads', express.static('uploads'));
 
 // Rutas de autores
 app.use('/api/authors', authorRoutes);

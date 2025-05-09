@@ -27,7 +27,7 @@ export const createBook = async (req, res) => {
     const { title, description, publication_date, category_id, author_id } = req.body;
 
     // Si la imagen se sube, la ruta de la imagen será guardada en la base de datos
-    const coverImagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const coverImagePath = req.file ? req.file.filename : null;
 
     // Crear el libro en la base de datos
     const newBook = await Book.create({
