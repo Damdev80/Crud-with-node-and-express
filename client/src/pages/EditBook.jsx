@@ -16,6 +16,7 @@ export default function EditBook() {
 
   useEffect(() => {
     fetchBook()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const fetchBook = async () => {
@@ -203,8 +204,8 @@ export default function EditBook() {
                   initialData={{
                     ...book,
                     id: book.book_id,
-                    author_id: (book.author && book.author.name) ? book.author.name : (typeof book.author_id === 'string' ? book.author_id : ''),
-                    category_id: (book.category && book.category.name) ? book.category.name : (typeof book.category_id === 'string' ? book.category_id : '')
+                    author_id: book.author?.name || book.author_id || '',
+                    category_id: book.category?.name || book.category_id || ''
                   }}
                   isSubmitting={isSaving}
                 />

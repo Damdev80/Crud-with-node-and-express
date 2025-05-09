@@ -64,7 +64,16 @@ const BookCard = ({ book, onClick }) => {
               )}
             </div>
 
-            {book.author && <p className="text-sm text-gray-500 mt-1 italic">por {book.author}</p>}
+            {/* Mostrar autor siempre, cubriendo todos los formatos posibles */}
+            {book.author?.name && (
+              <p className="text-sm text-gray-500 mt-1 italic">por {book.author.name}</p>
+            )}
+            {!book.author?.name && book.author && (
+              <p className="text-sm text-gray-500 mt-1 italic">por {book.author}</p>
+            )}
+            {!book.author && book.author_name && (
+              <p className="text-sm text-gray-500 mt-1 italic">por {book.author_name}</p>
+            )}
 
             <p className="text-gray-600 text-sm mt-3 line-clamp-3 leading-relaxed">{book.description}</p>
 

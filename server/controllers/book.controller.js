@@ -87,7 +87,7 @@ export const updateBook = async (req, res) => {
     // Si se sube una nueva imagen, actualiza la ruta
     let coverImagePath = req.body.cover_image;
     if (req.file) {
-      coverImagePath = `/uploads/${req.file.filename}`;
+      coverImagePath = req.file.filename;
     }
     const updated = await Book.update(req.params.id, {
       ...req.body,

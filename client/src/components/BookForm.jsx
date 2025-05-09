@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { FaBook, FaUpload, FaTimes, FaSave, FaArrowLeft } from "react-icons/fa"
 
-const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categories = [] }) => {
+const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const [form, setForm] = useState({
     title: initialData.title || "",
     author_id: initialData.author_id || "",
@@ -26,35 +26,8 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Validar el formulario cuando cambian los valores
-  useEffect(() => {
-    validateForm()
-  }, [form])
-
-  // Si el libro viene de la API para editar, puede que los campos sean distintos
-  useEffect(() => {
-    if (initialData && initialData.book_id) {
-      setForm({
-        title: initialData.title || "",
-        author_id: initialData.author_id || "",
-        category_id: initialData.category_id || "",
-        publication_year: initialData.publication_year || "",
-        isbn: initialData.isbn || "",
-        available_copies: initialData.available_copies || "",
-        description: initialData.description || "",
-        cover_image: null,
-      });
-      setImagePreview(
-        initialData.cover_image
-          ? (initialData.cover_image.startsWith('http')
-              ? initialData.cover_image
-              : `http://localhost:3000/uploads/${initialData.cover_image}`)
-          : null
-      );
-    }
-  }, [initialData]);
-
-  const validateForm = () => {
+  // Declarar validateForm ANTES de los useEffect para evitar ReferenceError
+  const validateForm = useCallback(() => {
     const newErrors = {}
     // Validación de título
     if (!form.title.trim()) newErrors.title = "El título es obligatorio"
@@ -73,9 +46,8 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
 
     if (form.publication_year) {
       const year = Number.parseInt(form.publication_year)
-      const currentYear = new Date().getFullYear()
-      if (isNaN(year) || year < 1000 || year > currentYear) {
-        newErrors.publication_year = `El año debe ser un número entre 1000 y ${currentYear}`
+      if (isNaN(year) || year < 1500) {
+        newErrors.publication_year = `El año debe ser un número mayor o igual a 1500`
       }
     }
 
@@ -96,7 +68,35 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }
+  }, [form])
+
+  // Validar el formulario cuando cambian los valores
+  useEffect(() => {
+    validateForm()
+  }, [form, validateForm])
+
+  // Si el libro viene de la API para editar, puede que los campos sean distintos
+  useEffect(() => {
+    if (initialData && initialData.book_id) {
+      setForm({
+        title: initialData.title || "",
+        author_id: initialData.author?.name || initialData.author || initialData.author_id || "",
+        category_id: initialData.category?.name || initialData.category || initialData.category_id || "",
+        publication_year: initialData.publication_year || "",
+        isbn: initialData.isbn || "",
+        available_copies: initialData.available_copies || "",
+        description: initialData.description || "",
+        cover_image: null, // No sobrescribir la imagen existente
+      });
+      setImagePreview(
+        initialData.cover_image
+          ? (initialData.cover_image.startsWith('http')
+              ? initialData.cover_image
+              : `http://localhost:3000/uploads/${initialData.cover_image}`)
+          : null
+      );
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -152,20 +152,19 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
 
     setIsSubmitting(true)
     try {
-      let dataToSend;
-      if (!initialData.id) {
-        // CREAR: enviar nombres
-        dataToSend = {
-          ...form,
-          author_name: form.author_id,
-          category_name: form.category_id,
-        };
-        delete dataToSend.author_id;
-        delete dataToSend.category_id;
-      } else {
-        // EDITAR: enviar IDs
-        dataToSend = { ...form };
+      let dataToSend = {
+        ...form,
+        author_name: form.author_id,
+        category_name: form.category_id,
+      };
+      delete dataToSend.author_id;
+      delete dataToSend.category_id;
+
+      // Si no se seleccionó una nueva imagen, eliminar cover_image para no sobreescribir
+      if (!form.cover_image) {
+        delete dataToSend.cover_image;
       }
+
       await onSubmit(dataToSend)
       setSuccessMessage(initialData.id ? "¡Libro actualizado exitosamente!" : "¡Libro agregado exitosamente!");
       setTimeout(() => setSuccessMessage(""), 3500);
@@ -193,27 +192,38 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
     }
   }
 
+  // Detectar si es modo edición
+  const isEditMode = !!initialData.id;
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
-      {/* HEADER */}
-      <div className="mb-8">
-        <header className="bg-amber-700 text-white rounded-t-xl shadow-md p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <FaBook className="text-3xl" />
-            <span className="text-2xl font-bold tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>Gestión de Libros</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="italic text-amber-100 text-sm">Biblioteca Virtual</span>
-            <a
-              href="/"
-              className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-amber-800 transition-colors shadow"
-            >
-              <FaArrowLeft className="mr-2" />
-              Regresar
-            </a>
-          </div>
-        </header>
-      </div>
+    <div
+      className={
+        isEditMode
+          ? ""
+          : "bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto"
+      }
+    >
+      {/* HEADER solo para modo agregar */}
+      {!isEditMode && (
+        <div className="mb-8">
+          <header className="bg-amber-700 text-white rounded-t-xl shadow-md p-6 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <FaBook className="text-3xl" />
+              <span className="text-2xl font-bold tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>Gestión de Libros</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="italic text-amber-100 text-sm">Biblioteca Virtual</span>
+              <a
+                href="/"
+                className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-amber-800 transition-colors shadow"
+              >
+                <FaArrowLeft className="mr-2" />
+                Regresar
+              </a>
+            </div>
+          </header>
+        </div>
+      )}
 
       <div className="flex items-center mb-6 pb-4 border-b border-gray-200">
         <h2 className="text-2xl font-bold text-gray-800">{initialData.id ? "Editar Libro" : "Nuevo Libro"}</h2>
@@ -261,7 +271,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
               name="category_id"
               value={form.category_id}
               onChange={handleChange}
-              placeholder="Ej: Novela"
+              placeholder="Ej: Novela, Ensayo, Ciencia Ficción..."
               className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
               required
               autoComplete="off"
@@ -424,10 +434,12 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
         </div>
       )}
 
-      {/* FOOTER */}
-      <footer className="mt-10 bg-amber-50 border-t border-amber-200 py-6 rounded-b-xl shadow-inner text-center">
-        <p className="text-sm text-amber-700">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>
-      </footer>
+      {/* FOOTER solo para modo agregar */}
+      {!isEditMode && (
+        <footer className="mt-10 bg-amber-50 border-t border-amber-200 py-6 rounded-b-xl shadow-inner text-center">
+          <p className="text-sm text-amber-700">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>
+        </footer>
+      )}
     </div>
   )
 }
