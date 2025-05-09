@@ -72,6 +72,19 @@ class Category {
       throw error;
     }
   }
+
+  // Buscar categoría por nombre
+  static async findOrCreateByName(name) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM categories WHERE name = ?', [name]);
+      if (rows.length > 0) return rows[0];
+      // Si no existe, crearla con descripción vacía
+      const created = await Category.create({ name, description: '' });
+      return { category_id: created.category_id, name, description: '' };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default Category;

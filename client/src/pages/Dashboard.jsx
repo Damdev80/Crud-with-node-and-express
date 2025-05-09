@@ -512,12 +512,25 @@ const Dashboard = () => {
                       key={book.book_id}
                       className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
                     >
-                      <div className="h-48 overflow-hidden">
+                      <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
                         <img
-                          src={`http://localhost:3000/uploads/${book.cover_image}`}
+                          src={book.cover_image && book.cover_image.startsWith('http')
+                            ? book.cover_image
+                            : book.cover_image
+                              ? `http://localhost:3000/uploads/${book.cover_image}`
+                              : '/public/vite.svg'}
                           alt={book.title}
                           className="w-full h-full object-cover"
                         />
+                        <button
+                          className="absolute top-2 right-2 bg-amber-700 hover:bg-amber-800 text-white p-2 rounded-full shadow-md transition-colors z-10"
+                          title="Editar libro"
+                          onClick={() => window.location.href = `/edit/${book.book_id}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
+                          </svg>
+                        </button>
                       </div>
                       <div className="p-4">
                         <h3 className="font-bold text-gray-800 mb-1 line-clamp-1">{book.title}</h3>
@@ -583,30 +596,11 @@ const Dashboard = () => {
       </div>
 
       {/* Modal para añadir libro */}
-      {showAddBook && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-800">Añadir Nuevo Libro</h2>
-                <button onClick={() => setShowAddBook(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <BookForm onSubmit={handleAddBook} onCancel={() => setShowAddBook(false)} />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Cambiado: ahora redirige a la ruta /add-book en vez de mostrar un modal */}
+      {showAddBook && (() => {
+        window.location.href = '/add';
+        return null;
+      })()}
     </div>
   )
 }

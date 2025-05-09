@@ -1,4 +1,6 @@
 import Book from '../models/book.model.js';
+import Author from '../models/author.model.js';
+import Category from '../models/category.model.js';
 
 // Obtener todos los libros (con detalles)
 export const getAllBooks = async (req, res) => {
@@ -24,19 +26,25 @@ export const getBookById = async (req, res) => {
 // Crear libro
 export const createBook = async (req, res) => {
   try {
-    const { title, description, publication_date, category_id, author_id } = req.body;
-
-    // Si la imagen se sube, la ruta de la imagen será guardada en la base de datos
+    // Recibe nombres en vez de IDs
+    const { title, description, publication_date, author_name, category_name, publication_year, isbn, available_copies } = req.body;
     const coverImagePath = req.file ? req.file.filename : null;
 
-    // Crear el libro en la base de datos
+    // Buscar o crear autor y categoría
+    const author = await Author.findOrCreateByName(author_name);
+    const category = await Category.findOrCreateByName(category_name);
+
+    // Crear el libro con los IDs obtenidos
     const newBook = await Book.create({
       title,
       description,
       publication_date,
-      category_id,
-      author_id,
-      cover_image: coverImagePath,  // Guardamos la ruta de la imagen
+      publication_year,
+      isbn,
+      available_copies,
+      author_id: author.author_id,
+      category_id: category.category_id,
+      cover_image: coverImagePath,
     });
 
     res.status(201).json({

@@ -70,6 +70,26 @@ class Author {
       throw error;
     }
   }
+
+  // Buscar autor por nombre (nombre completo)
+  static async findOrCreateByName(fullName) {
+    // Separar en nombre y apellido (simple, asume 2 palabras)
+    const [first_name, ...rest] = fullName.trim().split(' ');
+    const last_name = rest.join(' ');
+    try {
+      const [rows] = await pool.query(
+        'SELECT * FROM authors WHERE first_name = ? AND last_name = ?',
+        [first_name, last_name]
+      );
+      if (rows.length > 0) return rows[0];
+      // Si no existe, crearlo con datos mínimos
+      const author = { first_name, last_name, birth_date: null, nationality: null };
+      const created = await Author.create(author);
+      return { author_id: created.id, ...author };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default Author;

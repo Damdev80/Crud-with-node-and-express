@@ -14,7 +14,15 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
   })
 
   const [errors, setErrors] = useState({})
-  const [imagePreview, setImagePreview] = useState(initialData.cover_image || null)
+  const [successMessage, setSuccessMessage] = useState("");
+  // Inicializar imagePreview correctamente para edición y nuevo libro
+  const initialImagePreview = initialData.cover_image
+    ? (initialData.cover_image.startsWith('http')
+        ? initialData.cover_image
+        : `http://localhost:3000/uploads/${initialData.cover_image}`)
+    : null;
+
+  const [imagePreview, setImagePreview] = useState(initialImagePreview)
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -23,12 +31,45 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
     validateForm()
   }, [form])
 
+  // Si el libro viene de la API para editar, puede que los campos sean distintos
+  useEffect(() => {
+    if (initialData && initialData.book_id) {
+      setForm({
+        title: initialData.title || "",
+        author_id: initialData.author_id || "",
+        category_id: initialData.category_id || "",
+        publication_year: initialData.publication_year || "",
+        isbn: initialData.isbn || "",
+        available_copies: initialData.available_copies || "",
+        description: initialData.description || "",
+        cover_image: null,
+      });
+      setImagePreview(
+        initialData.cover_image
+          ? (initialData.cover_image.startsWith('http')
+              ? initialData.cover_image
+              : `http://localhost:3000/uploads/${initialData.cover_image}`)
+          : null
+      );
+    }
+  }, [initialData]);
+
   const validateForm = () => {
     const newErrors = {}
-
+    // Validación de título
     if (!form.title.trim()) newErrors.title = "El título es obligatorio"
-    if (!form.author_id) newErrors.author_id = "Debes seleccionar un autor"
-    if (!form.category_id) newErrors.category_id = "Debes seleccionar una categoría"
+    // Validación de autor (solo letras, espacios y acentos)
+    if (!form.author_id.trim()) {
+      newErrors.author_id = "El autor es obligatorio"
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.author_id.trim())) {
+      newErrors.author_id = "El autor solo puede contener letras y espacios"
+    }
+    // Validación de categoría (solo letras, espacios y acentos)
+    if (!form.category_id.trim()) {
+      newErrors.category_id = "La categoría es obligatoria"
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.category_id.trim())) {
+      newErrors.category_id = "La categoría solo puede contener letras y espacios"
+    }
 
     if (form.publication_year) {
       const year = Number.parseInt(form.publication_year)
@@ -111,7 +152,23 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
 
     setIsSubmitting(true)
     try {
-      await onSubmit(form)
+      let dataToSend;
+      if (!initialData.id) {
+        // CREAR: enviar nombres
+        dataToSend = {
+          ...form,
+          author_name: form.author_id,
+          category_name: form.category_id,
+        };
+        delete dataToSend.author_id;
+        delete dataToSend.category_id;
+      } else {
+        // EDITAR: enviar IDs
+        dataToSend = { ...form };
+      }
+      await onSubmit(dataToSend)
+      setSuccessMessage(initialData.id ? "¡Libro actualizado exitosamente!" : "¡Libro agregado exitosamente!");
+      setTimeout(() => setSuccessMessage(""), 3500);
       // Resetear el formulario después de enviar exitosamente
       if (!initialData.id) {
         setForm({
@@ -128,6 +185,9 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
       }
     } catch (error) {
       console.error("Error al enviar el formulario:", error)
+      setSuccessMessage("");
+      setErrors({ general: error.message || "Ocurrió un error al agregar el libro. Intenta de nuevo." });
+      setTimeout(() => setErrors({}), 3500);
     } finally {
       setIsSubmitting(false)
     }
@@ -135,8 +195,27 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
+      {/* HEADER */}
+      <div className="mb-8">
+        <header className="bg-amber-700 text-white rounded-t-xl shadow-md p-6 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <FaBook className="text-3xl" />
+            <span className="text-2xl font-bold tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>Gestión de Libros</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="italic text-amber-100 text-sm">Biblioteca Virtual</span>
+            <a
+              href="/"
+              className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-amber-800 transition-colors shadow"
+            >
+              <FaArrowLeft className="mr-2" />
+              Regresar
+            </a>
+          </div>
+        </header>
+      </div>
+
       <div className="flex items-center mb-6 pb-4 border-b border-gray-200">
-        <FaBook className="text-amber-700 text-2xl mr-3" />
         <h2 className="text-2xl font-bold text-gray-800">{initialData.id ? "Editar Libro" : "Nuevo Libro"}</h2>
       </div>
 
@@ -162,20 +241,15 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Autor <span className="text-red-500">*</span>
             </label>
-            <select
+            <input
               name="author_id"
               value={form.author_id}
               onChange={handleChange}
+              placeholder="Ej: Gabriel García Márquez"
               className={`w-full px-4 py-2 rounded-lg border ${errors.author_id ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
               required
-            >
-              <option value="">Seleccionar autor</option>
-              {authors.map((author) => (
-                <option key={author.id} value={author.id}>
-                  {author.name}
-                </option>
-              ))}
-            </select>
+              autoComplete="off"
+            />
             {errors.author_id && <p className="mt-1 text-sm text-red-500">{errors.author_id}</p>}
           </div>
 
@@ -183,20 +257,15 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Categoría <span className="text-red-500">*</span>
             </label>
-            <select
+            <input
               name="category_id"
               value={form.category_id}
               onChange={handleChange}
+              placeholder="Ej: Novela"
               className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
               required
-            >
-              <option value="">Seleccionar categoría</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+              autoComplete="off"
+            />
             {errors.category_id && <p className="mt-1 text-sm text-red-500">{errors.category_id}</p>}
           </div>
 
@@ -269,7 +338,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
             {imagePreview ? (
               <div className="relative w-full h-48 mb-2 rounded-lg overflow-hidden border border-gray-300">
                 <img
-                  src={imagePreview || "/placeholder.svg"}
+                  src={imagePreview}
                   alt="Vista previa"
                   className="w-full h-full object-cover"
                 />
@@ -328,8 +397,25 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
           </button>
         </div>
       </form>
+
+      {successMessage && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+          {successMessage}
+        </div>
+      )}
+
+      {errors.general && (
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-300 text-red-800 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+          {errors.general}
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="mt-10 bg-amber-50 border-t border-amber-200 py-6 rounded-b-xl shadow-inner text-center">
+        <p className="text-sm text-amber-700">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>
+      </footer>
     </div>
   )
 }
 
-export default BookForm;
+export default BookForm
