@@ -410,6 +410,20 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
         </div>
       )}
 
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 animate-fade-in">
+          <div className="flex flex-col items-center animate-fade-in">
+            <div className="relative mb-4">
+              <div className="w-16 h-16 border-4 border-amber-300 border-t-amber-700 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FaBook className="text-amber-700 text-3xl animate-bounce" />
+              </div>
+            </div>
+            <span className="text-amber-800 font-semibold animate-pulse text-lg">Guardando libro...</span>
+          </div>
+        </div>
+      )}
+
       {/* FOOTER */}
       <footer className="mt-10 bg-amber-50 border-t border-amber-200 py-6 rounded-b-xl shadow-inner text-center">
         <p className="text-sm text-amber-700">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>

@@ -6,10 +6,8 @@ const BookCard = ({ book, onClick }) => {
 
   return (
     <div
-      className="group relative h-[420px] w-[280px] cursor-pointer"
-      style={{
-        perspective: "1000px",
-      }}
+      className="group relative h-[420px] w-[280px] cursor-pointer transition-transform duration-500 hover:scale-105 hover:shadow-2xl animate-fade-in"
+      style={{ perspective: "1000px" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onClick(book)}
@@ -19,7 +17,8 @@ const BookCard = ({ book, onClick }) => {
         className={`absolute inset-0 transition-all duration-700`}
         style={{
           transformStyle: "preserve-3d",
-          transform: isHovered ? "rotateY(10deg)" : "rotateY(0deg)",
+          transform: isHovered ? "rotateY(10deg) scale(1.04)" : "rotateY(0deg)",
+          boxShadow: isHovered ? "0 8px 32px 0 rgba(0,0,0,0.18)" : undefined,
         }}
       >
         {/* Lomo del libro */}
@@ -94,13 +93,12 @@ const BookCard = ({ book, onClick }) => {
           </div>
         </div>
       </div>
-
-      {/* Sombra del libro */}
+      {/* Sombra animada */}
       <div
-        className="absolute -bottom-6 left-4 right-2 h-6 rounded-full transform-gpu transition-all duration-500 group-hover:opacity-70"
+        className="absolute -bottom-6 left-4 right-2 h-6 rounded-full transform-gpu transition-all duration-500 group-hover:opacity-80 animate-fade-in"
         style={{
-          backgroundColor: "rgba(0,0,0,0.2)",
-          filter: isHovered ? "blur(12px)" : "blur(8px)",
+          backgroundColor: "rgba(0,0,0,0.18)",
+          filter: isHovered ? "blur(14px)" : "blur(8px)",
         }}
       />
     </div>

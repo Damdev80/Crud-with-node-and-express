@@ -308,73 +308,79 @@ const Dashboard = () => {
       {/* Estadísticas */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 flex items-center">
-            <div className="rounded-full bg-amber-100 p-3 mr-4">
-              <FaBookOpen className="text-amber-700 text-xl" />
+          {/* Tarjetas de estadísticas con animación fade-in escalonada */}
+          {[{
+            icon: <FaBookOpen className="text-amber-700 text-xl" />, 
+            bg: "bg-amber-100", 
+            label: "Total de Libros", 
+            value: stats.totalBooks
+          }, {
+            icon: <FaBook className="text-green-700 text-xl" />, 
+            bg: "bg-green-100", 
+            label: "Libros Disponibles", 
+            value: stats.availableBooks
+          }, {
+            icon: <FaUserFriends className="text-blue-700 text-xl" />, 
+            bg: "bg-blue-100", 
+            label: "Autores", 
+            value: stats.authors
+          }, {
+            icon: <FaCalendarAlt className="text-purple-700 text-xl" />, 
+            bg: "bg-purple-100", 
+            label: "Añadidos Recientes", 
+            value: stats.recentlyAdded
+          }].map((stat, idx) => (
+            <div
+              key={stat.label}
+              className="bg-white rounded-xl shadow-md p-6 flex items-center"
+              style={{
+                opacity: 0,
+                transform: 'translateY(32px)',
+                animation: `fade-in 0.7s cubic-bezier(0.4,0,0.2,1) forwards`,
+                animationDelay: `${(idx * 0.10).toFixed(2)}s`,
+              }}
+              onAnimationEnd={e => {
+                e.currentTarget.style.opacity = 1;
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <div className={`rounded-full ${stat.bg} p-3 mr-4`}>
+                {stat.icon}
+              </div>
+              <div>
+                <p className="text-gray-500 text-sm">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-500 text-sm">Total de Libros</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalBooks}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 flex items-center">
-            <div className="rounded-full bg-green-100 p-3 mr-4">
-              <FaBook className="text-green-700 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Libros Disponibles</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.availableBooks}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 flex items-center">
-            <div className="rounded-full bg-blue-100 p-3 mr-4">
-              <FaUserFriends className="text-blue-700 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Autores</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.authors}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 flex items-center">
-            <div className="rounded-full bg-purple-100 p-3 mr-4">
-              <FaCalendarAlt className="text-purple-700 text-xl" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Añadidos Recientes</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.recentlyAdded}</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Libro más visto */}
         {stats.mostViewed && (
-          <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-6 mb-8 animate-fade-in">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <FaEye className="mr-2 text-amber-700" />
-              Libro más popular
+              <span className="tracking-wide">Libro más popular</span>
             </h2>
             <div className="flex flex-col md:flex-row items-center">
-              <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6">
+              <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
                 <img
                   src={`http://localhost:3000/uploads/${stats.mostViewed.cover_image}`}
                   alt={stats.mostViewed.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-700 hover:scale-105 hover:shadow-2xl animate-fade-in"
                 />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-800">{stats.mostViewed.title}</h3>
-                <p className="text-gray-600">{stats.mostViewed.author?.name}</p>
-                <p className="text-sm text-gray-500 mt-2">
+              <div className="animate-fade-in">
+                <h3 className="text-lg font-bold text-gray-800 animate-fade-in animate-delay-200">{stats.mostViewed.title}</h3>
+                <p className="text-gray-600 animate-fade-in animate-delay-300">{stats.mostViewed.author?.name}</p>
+                <p className="text-sm text-gray-500 mt-2 animate-fade-in animate-delay-400">
                   <span className="font-medium">{stats.mostViewed.views}</span> visualizaciones
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 mt-1 animate-fade-in animate-delay-500">
                   {stats.mostViewed.available_copies}{" "}
                   {stats.mostViewed.available_copies === 1 ? "copia disponible" : "copias disponibles"}
                 </p>
-                <p className="text-sm text-gray-600 mt-3 line-clamp-2">{stats.mostViewed.description}</p>
+                <p className="text-sm text-gray-600 mt-3 line-clamp-2 animate-fade-in animate-delay-600">{stats.mostViewed.description}</p>
               </div>
             </div>
           </div>
@@ -471,32 +477,34 @@ const Dashboard = () => {
 
           {/* Estado de carga */}
           {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-700"></div>
+            <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+              <div className="relative mb-4">
+                <div className="w-16 h-16 border-4 border-amber-300 border-t-amber-700 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <FaBook className="text-amber-700 text-3xl animate-bounce" />
+                </div>
+              </div>
+              <p className="text-lg text-amber-700 font-semibold animate-pulse">Cargando libros...</p>
             </div>
           ) : error ? (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+            <div className="bg-red-50 text-red-700 p-4 rounded-lg animate-fade-in">
               <p>{error}</p>
-              <button onClick={fetchBooks} className="mt-2 text-sm font-medium underline">
-                Intentar de nuevo
-              </button>
+              <button onClick={fetchBooks} className="mt-2 text-sm font-medium underline">Intentar de nuevo</button>
             </div>
           ) : filteredBooks.length === 0 ? (
-            <div className="text-center py-12">
-              <FaBook className="mx-auto text-4xl text-gray-300 mb-4" />
+            <div className="text-center py-12 animate-fade-in">
+              <FaBook className="mx-auto text-4xl text-gray-300 mb-4 animate-bounce" />
               <h3 className="text-xl font-medium text-gray-700 mb-2">No se encontraron libros</h3>
-              <p className="text-gray-500">
-                {searchTerm || selectedCategory !== "all"
-                  ? "Intenta con otros filtros de búsqueda"
-                  : "Añade libros a tu biblioteca para comenzar"}
-              </p>
+              <p className="text-gray-500">{searchTerm || selectedCategory !== "all"
+                ? "Intenta con otros filtros de búsqueda"
+                : "Añade libros a tu biblioteca para comenzar"}</p>
               {(searchTerm || selectedCategory !== "all") && (
                 <button
                   onClick={() => {
-                    setSearchTerm("")
-                    setSelectedCategory("all")
+                    setSearchTerm("");
+                    setSelectedCategory("all");
                   }}
-                  className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
+                  className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors animate-fade-in"
                 >
                   Limpiar filtros
                 </button>
@@ -507,10 +515,20 @@ const Dashboard = () => {
               {/* Vista de cuadrícula o lista */}
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {filteredBooks.map((book) => (
+                  {filteredBooks.map((book, idx) => (
                     <div
                       key={book.book_id}
                       className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+                      style={{
+                        opacity: 0,
+                        transform: 'translateY(32px)',
+                        animation: `fade-in 0.7s cubic-bezier(0.4,0,0.2,1) forwards`,
+                        animationDelay: `${(idx * 0.08).toFixed(2)}s`,
+                      }}
+                      onAnimationEnd={e => {
+                        e.currentTarget.style.opacity = 1;
+                        e.currentTarget.style.transform = 'none';
+                      }}
                     >
                       <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
                         <img
