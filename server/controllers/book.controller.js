@@ -15,9 +15,29 @@ export const getAllBooks = async (req, res) => {
 // Obtener libro por ID
 export const getBookById = async (req, res) => {
   try {
+    // Obtener el libro base
     const book = await Book.getById(req.params.id);
     if (!book) return res.status(404).json({ success: false, message: 'Libro no encontrado' });
-    res.json({ success: true, data: book });
+
+    // Obtener detalles de autor
+    let author = null;
+    if (book.author_id) {
+      author = await Author.getById(book.author_id);
+    }
+    // Obtener detalles de categoría
+    let category = null;
+    if (book.category_id) {
+      category = await Category.getById(book.category_id);
+    }
+
+    // Estructura enriquecida
+    const bookWithDetails = {
+      ...book,
+      author: author ? { name: `${author.first_name}${author.last_name ? ' ' + author.last_name : ''}` } : null,
+      category: category ? { name: category.name } : null,
+    };
+
+    res.json({ success: true, data: bookWithDetails });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al obtener libro', error: error.message });
   }

@@ -59,13 +59,13 @@ const BookForm = ({ onSubmit, onCancel, initialData = {}, authors = [], categori
     // Validación de título
     if (!form.title.trim()) newErrors.title = "El título es obligatorio"
     // Validación de autor (solo letras, espacios y acentos)
-    if (!form.author_id.trim()) {
+    if (typeof form.author_id !== "string" || !form.author_id.trim()) {
       newErrors.author_id = "El autor es obligatorio"
     } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.author_id.trim())) {
       newErrors.author_id = "El autor solo puede contener letras y espacios"
     }
     // Validación de categoría (solo letras, espacios y acentos)
-    if (!form.category_id.trim()) {
+    if (typeof form.category_id !== "string" || !form.category_id.trim()) {
       newErrors.category_id = "La categoría es obligatoria"
     } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.category_id.trim())) {
       newErrors.category_id = "La categoría solo puede contener letras y espacios"
