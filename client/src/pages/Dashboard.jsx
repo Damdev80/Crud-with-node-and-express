@@ -16,7 +16,7 @@ import {
   FaCalendarAlt,
   FaUserFriends,
 } from "react-icons/fa"
-import BookForm from "../components/BookForm"
+import {Footer} from "../components/Footer"
 
 const Dashboard = () => {
   const [books, setBooks] = useState([])
@@ -608,10 +608,14 @@ const Dashboard = () => {
                   </button>
                 </nav>
               </div>
+
+              
             </>
           )}
         </div>
+        
       </div>
+      <Footer/>
 
       {/* Modal para añadir libro */}
       {/* Cambiado: ahora redirige a la ruta /add-book en vez de mostrar un modal */}
@@ -619,6 +623,8 @@ const Dashboard = () => {
         window.location.href = '/add';
         return null;
       })()}
+
+
     </div>
   )
 }
