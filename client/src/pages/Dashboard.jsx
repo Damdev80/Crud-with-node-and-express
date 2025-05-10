@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   FaBook,
   FaSearch,
@@ -17,6 +17,7 @@ import {
   FaUserFriends,
 } from "react-icons/fa"
 import {Footer} from "../components/Footer"
+import { getCategories, getAuthors } from '../services/filterService';
 
 const Dashboard = () => {
   const [books, setBooks] = useState([])
@@ -24,7 +25,10 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedAuthor, setSelectedAuthor] = useState('all');
   const [viewMode, setViewMode] = useState("grid")
   const [showAddBook, setShowAddBook] = useState(false)
   const [stats, setStats] = useState({
@@ -35,9 +39,17 @@ const Dashboard = () => {
     recentlyAdded: 0,
     mostViewed: null,
   })
+  const [pageTransition, setPageTransition] = useState(false)
+  const containerRef = useRef(null)
+  const [currentPage, setCurrentPage] = useState(1);
+  const booksPerPage = 8;
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+  const paginatedBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Categorías de ejemplo
-  const categories = [
+  const exampleCategories = [
     { id: "all", name: "Todas" },
     { id: "1", name: "Novela" },
     { id: "2", name: "Poesía" },
@@ -55,7 +67,22 @@ const Dashboard = () => {
       filterBooks()
       calculateStats()
     }
-  }, [books, searchTerm, selectedCategory])
+  }, [books, searchTerm, selectedCategory, selectedAuthor])
+
+  useEffect(() => {
+    // Obtener categorías y autores del backend
+    getCategories().then(setCategories).catch(() => setCategories([]));
+    getAuthors()
+      .then((data) => {
+        // Mapear autores para combinar first_name y last_name en name
+        const mappedAuthors = data.map((author) => ({
+          ...author,
+          name: author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+        }));
+        setAuthors(mappedAuthors);
+      })
+      .catch(() => setAuthors([]));
+  }, []);
 
   const fetchBooks = async () => {
     setIsLoading(true)
@@ -194,7 +221,12 @@ const Dashboard = () => {
 
     // Filtrar por categoría
     if (selectedCategory !== "all") {
-      result = result.filter((book) => book.category_id === selectedCategory)
+      result = result.filter((book) => String(book.category_id) === String(selectedCategory))
+    }
+
+    // Filtrar por autor
+    if (selectedAuthor !== "all") {
+      result = result.filter((book) => String(book.author_id) === String(selectedAuthor))
     }
 
     setFilteredBooks(result)
@@ -208,17 +240,34 @@ const Dashboard = () => {
     // Obtener categorías únicas
     const uniqueCategories = new Set(books.map((book) => book.category_id))
 
-    // Obtener autores únicos
-    const uniqueAuthors = new Set(books.map((book) => book.author?.name).filter(Boolean))
+    // Obtener autores únicos (soporta string y objeto)
+    const uniqueAuthors = new Set(
+      books
+        .map((book) => {
+          if (!book.author) return null;
+          if (typeof book.author === 'string') return book.author.trim();
+          if (typeof book.author === 'object' && book.author.name) return book.author.name.trim();
+          return null;
+        })
+        .filter(Boolean)
+    )
 
-    // Libros añadidos en los últimos 30 días
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    // Libros añadidos en los últimos 30 días (soporta distintos formatos de fecha)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
     const recentlyAdded = books.filter((book) => {
-      if (!book.added_date) return false
-      const addedDate = new Date(book.added_date)
-      return addedDate >= thirtyDaysAgo
-    }).length
+      if (!book.added_date) return false;
+      let addedDate;
+      if (typeof book.added_date === 'string') {
+        // Soporta formatos YYYY-MM-DD y fechas ISO
+        addedDate = new Date(book.added_date);
+      } else if (book.added_date instanceof Date) {
+        addedDate = book.added_date;
+      } else {
+        return false;
+      }
+      return !isNaN(addedDate) && addedDate >= thirtyDaysAgo;
+    }).length;
 
     // Libro más visto
     let mostViewed = null
@@ -244,8 +293,16 @@ const Dashboard = () => {
     setSelectedCategory(categoryId)
   }
 
-  const handleAddBook = (bookData) => {
+  const handleAddBook = async (bookData) => {
     // Aquí iría la lógica para añadir un libro a través de la API
+    // Si implementas la API, muestra la alerta después de guardar correctamente:
+    // try {
+    //   const response = await fetch('http://localhost:3000/api/books', { ... })
+    //   if (response.ok) {
+    //     alert('Libro añadido con éxito')
+    //   }
+    // } catch (e) { ... }
+
     console.log("Añadiendo libro:", bookData)
     setShowAddBook(false)
 
@@ -279,28 +336,54 @@ const Dashboard = () => {
     window.print()
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
-      {/* Cabecera */}
-      <header className="bg-amber-900 text-white shadow-lg">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <FaBook className="text-2xl" />
-              <h1 className="text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
-                Mi Biblioteca
-              </h1>
-            </div>
+  const handleAddBookTransition = () => {
+    setPageTransition(true)
+    setTimeout(() => {
+      window.location.href = '/add'
+    }, 400)
+  }
 
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowAddBook(true)}
-                className="flex items-center bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <FaPlus className="mr-2" />
-                Añadir Libro
-              </button>
-            </div>
+  // Función para abrir el modal con la info del libro
+  const openBookModal = (book) => {
+    setSelectedBook(book);
+    setShowModal(true);
+  };
+
+  // Función para cerrar el modal
+  const closeBookModal = () => {
+    setShowModal(false);
+    setTimeout(() => setSelectedBook(null), 300); // Espera animación
+  };
+
+  // Resetear a la página 1 si cambian los filtros o búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedAuthor]);
+
+  return (
+    <div ref={containerRef} className={`min-h-screen bg-[#f7fafc] transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
+      {/* Cabecera */}
+      <header className="bg-[#79b2e9] text-white shadow-lg">
+        <div className="container mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <FaBook className="text-2xl" />
+            <h1 className="text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
+              Mi Biblioteca
+            </h1>
+          </div>
+          <nav className="flex flex-wrap gap-2 md:gap-4 mt-4 md:mt-0">
+            <a href="/" className="text-white hover:text-[#2366a8] font-medium transition-colors">Catálogo</a>
+            <a href="/author-dashboard" className="text-white hover:text-[#2366a8] font-medium transition-colors">Autores</a>
+            <a href="/loan-dashboard" className="text-white hover:text-[#2366a8] font-medium transition-colors">Préstamos</a>
+          </nav>
+          <div className="flex items-center space-x-4 mt-4 md:mt-0">
+            <button
+              onClick={handleAddBookTransition}
+              className="flex items-center bg-[#79b2e9] hover:bg-[#2366a8] text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <FaPlus className="mr-2" />
+              Añadir Libro
+            </button>
           </div>
         </div>
       </header>
@@ -308,37 +391,42 @@ const Dashboard = () => {
       {/* Estadísticas */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Tarjetas de estadísticas con animación fade-in escalonada */}
+          {/* Tarjetas de estadísticas con animación fade-in escalonada y navegación */}
           {[{
-            icon: <FaBookOpen className="text-amber-700 text-xl" />, 
-            bg: "bg-amber-100", 
+            icon: <FaBookOpen className="text-[#2366a8] text-xl" />, 
+            bg: "bg-[#e3f0fb]", 
             label: "Total de Libros", 
-            value: stats.totalBooks
+            value: stats.totalBooks,
+            onClick: null
           }, {
             icon: <FaBook className="text-green-700 text-xl" />, 
             bg: "bg-green-100", 
             label: "Libros Disponibles", 
-            value: stats.availableBooks
+            value: stats.availableBooks,
+            onClick: null
           }, {
-            icon: <FaUserFriends className="text-blue-700 text-xl" />, 
-            bg: "bg-blue-100", 
+            icon: <FaUserFriends className="text-[#79b2e9] text-xl" />, 
+            bg: "bg-[#e3f0fb]", 
             label: "Autores", 
-            value: stats.authors
+            value: stats.authors,
+            onClick: () => window.location.href = '/author-dashboard'
           }, {
             icon: <FaCalendarAlt className="text-purple-700 text-xl" />, 
             bg: "bg-purple-100", 
-            label: "Añadidos Recientes", 
-            value: stats.recentlyAdded
+            label: "Préstamos", 
+            value: stats.recentlyAdded, // Puedes cambiar esto por stats.loans si tienes ese dato
+            onClick: () => window.location.href = '/loan-dashboard'
           }].map((stat, idx) => (
             <div
               key={stat.label}
-              className="bg-white rounded-xl shadow-md p-6 flex items-center"
+              className="bg-white rounded-xl shadow-md p-6 flex items-center cursor-pointer hover:bg-[#e3f0fb] transition-colors"
               style={{
                 opacity: 0,
                 transform: 'translateY(32px)',
                 animation: `fade-in 0.7s cubic-bezier(0.4,0,0.2,1) forwards`,
                 animationDelay: `${(idx * 0.10).toFixed(2)}s`,
               }}
+              onClick={stat.onClick}
               onAnimationEnd={e => {
                 e.currentTarget.style.opacity = 1;
                 e.currentTarget.style.transform = 'none';
@@ -401,31 +489,37 @@ const Dashboard = () => {
                   placeholder="Buscar libros..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 w-full md:w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#79b2e9] w-full md:w-64"
                 />
                 <FaSearch className="absolute left-3 top-3 text-gray-400" />
               </div>
 
               {/* Filtro de categorías */}
               <div className="relative group">
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <FaFilter className="mr-2 text-gray-500" />
-                  <span>{categories.find((c) => c.id === selectedCategory)?.name || "Categorías"}</span>
-                </button>
-
-                <div className="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden hidden group-hover:block">
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategoryChange(category.id)}
-                      className={`w-full text-left px-4 py-2 hover:bg-amber-50 ${
-                        selectedCategory === category.id ? "bg-amber-100 font-medium" : ""
-                      }`}
-                    >
-                      {category.name}
-                    </button>
+                <select
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(e.target.value)}
+                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id || cat.category_id} value={cat.id || cat.category_id}>{cat.name}</option>
                   ))}
-                </div>
+                </select>
+              </div>
+
+              {/* Filtro de autores */}
+              <div className="relative group">
+                <select
+                  value={selectedAuthor}
+                  onChange={e => setSelectedAuthor(e.target.value)}
+                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <option value="all">Todos los autores</option>
+                  {authors.map((author) => (
+                    <option key={author.id || author.author_id} value={author.id || author.author_id}>{author.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Cambio de vista */}
@@ -433,7 +527,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`px-3 py-2 ${
-                    viewMode === "grid" ? "bg-amber-100 text-amber-800" : "bg-white text-gray-600 hover:bg-gray-50"
+                    viewMode === "grid" ? "bg-[#e3f0fb] text-[#2366a8]" : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   <FaThLarge />
@@ -441,7 +535,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setViewMode("list")}
                   className={`px-3 py-2 ${
-                    viewMode === "list" ? "bg-amber-100 text-amber-800" : "bg-white text-gray-600 hover:bg-gray-50"
+                    viewMode === "list" ? "bg-[#e3f0fb] text-[#2366a8]" : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   <FaList />
@@ -452,21 +546,21 @@ const Dashboard = () => {
               <div className="flex space-x-2">
                 <button
                   onClick={exportCatalog}
-                  className="p-2 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+                  className="p-2 text-gray-600 hover:text-[#2366a8] hover:bg-[#e3f0fb] rounded-lg"
                   title="Exportar catálogo"
                 >
                   <FaDownload />
                 </button>
                 <button
                   onClick={printCatalog}
-                  className="p-2 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+                  className="p-2 text-gray-600 hover:text-[#2366a8] hover:bg-[#e3f0fb] rounded-lg"
                   title="Imprimir catálogo"
                 >
                   <FaPrint />
                 </button>
                 <button
                   onClick={() => alert("Ver estadísticas")}
-                  className="p-2 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+                  className="p-2 text-gray-600 hover:text-[#2366a8] hover:bg-[#e3f0fb] rounded-lg"
                   title="Ver estadísticas"
                 >
                   <FaChartBar />
@@ -479,12 +573,12 @@ const Dashboard = () => {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
               <div className="relative mb-4">
-                <div className="w-16 h-16 border-4 border-amber-300 border-t-amber-700 rounded-full animate-spin"></div>
+                <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-700 rounded-full animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <FaBook className="text-amber-700 text-3xl animate-bounce" />
+                  <FaBook className="text-blue-700 text-3xl animate-bounce" />
                 </div>
               </div>
-              <p className="text-lg text-amber-700 font-semibold animate-pulse">Cargando libros...</p>
+              <p className="text-lg text-blue-700 font-semibold animate-pulse">Cargando libros...</p>
             </div>
           ) : error ? (
             <div className="bg-red-50 text-red-700 p-4 rounded-lg animate-fade-in">
@@ -504,7 +598,7 @@ const Dashboard = () => {
                     setSearchTerm("");
                     setSelectedCategory("all");
                   }}
-                  className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors animate-fade-in"
+                  className="mt-4 px-4 py-2 bg-[#e3f0fb] text-[#2366a8] rounded-lg hover:bg-[#79b2e9] hover:text-white transition-colors animate-fade-in"
                 >
                   Limpiar filtros
                 </button>
@@ -515,10 +609,10 @@ const Dashboard = () => {
               {/* Vista de cuadrícula o lista */}
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {filteredBooks.map((book, idx) => (
+                  {paginatedBooks.map((book, idx) => (
                     <div
                       key={book.book_id}
-                      className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+                      className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
                       style={{
                         opacity: 0,
                         transform: 'translateY(32px)',
@@ -529,6 +623,7 @@ const Dashboard = () => {
                         e.currentTarget.style.opacity = 1;
                         e.currentTarget.style.transform = 'none';
                       }}
+                      onClick={() => openBookModal(book)}
                     >
                       <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
                         <img
@@ -541,7 +636,7 @@ const Dashboard = () => {
                           className="w-full h-full object-cover"
                         />
                         <button
-                          className="absolute top-2 right-2 bg-amber-700 hover:bg-amber-800 text-white p-2 rounded-full shadow-md transition-colors z-10"
+                          className="absolute top-2 right-2 bg-blue-700 hover:bg-blue-800 text-white p-2 rounded-full shadow-md transition-colors z-10"
                           title="Editar libro"
                           onClick={() => window.location.href = `/edit/${book.book_id}`}
                         >
@@ -552,9 +647,12 @@ const Dashboard = () => {
                       </div>
                       <div className="p-4">
                         <h3 className="font-bold text-gray-800 mb-1 line-clamp-1">{book.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{book.author?.name}</p>
+                        <p className="text-sm text-[#2366a8] mb-2 cursor-pointer hover:underline" onClick={() => window.location.href = '/author-dashboard'}>
+                          {/* Mostrar autor correctamente, incluso si viene como string o id */}
+                          {book.author?.name || book.author || authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.name || 'Autor desconocido'}
+                        </p>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-[#e3f0fb] text-[#2366a8] px-2 py-1 rounded-full">
                             {book.category?.name}
                           </span>
                           <span className="text-xs text-gray-500">{book.available_copies} disponibles</span>
@@ -565,8 +663,8 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {filteredBooks.map((book) => (
-                    <div key={book.book_id} className="py-4 flex items-center hover:bg-gray-50 transition-colors">
+                  {paginatedBooks.map((book) => (
+                    <div key={book.book_id} className="py-4 flex items-center hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openBookModal(book)}>
                       <div className="w-16 h-24 overflow-hidden rounded mr-4">
                         <img
                           src={`http://localhost:3000/uploads/${book.cover_image}`}
@@ -576,13 +674,15 @@ const Dashboard = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-800">{book.title}</h3>
-                        <p className="text-sm text-gray-600">{book.author?.name}</p>
+                        <p className="text-sm text-[#2366a8]">
+                          {book.author?.name || book.author || authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.name || 'Autor desconocido'}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           ISBN: {book.isbn || "N/A"} • Publicado: {book.publication_year || "N/A"}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                        <span className="text-xs bg-[#e3f0fb] text-[#2366a8] px-2 py-1 rounded-full">
                           {book.category?.name}
                         </span>
                         <p className="text-sm text-gray-500 mt-1">
@@ -594,39 +694,88 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Paginación (simplificada) */}
-              <div className="mt-8 flex justify-center">
-                <nav className="flex items-center space-x-2">
-                  <button className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50">
+              {/* Paginación simple */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 mr-2"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
                     Anterior
                   </button>
-                  <button className="px-3 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200">1</button>
-                  <button className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50">2</button>
-                  <button className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50">3</button>
-                  <button className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50">
+                  <span className="px-4 py-1 text-gray-700 font-semibold bg-[#e3f0fb] rounded border border-[#79b2e9]">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button
+                    className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 ml-2"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
                     Siguiente
                   </button>
-                </nav>
-              </div>
-
-              
+                </div>
+              )}
             </>
           )}
         </div>
-        
       </div>
       <Footer/>
-
       {/* Modal para añadir libro */}
-      {/* Cambiado: ahora redirige a la ruta /add-book en vez de mostrar un modal */}
       {showAddBook && (() => {
         window.location.href = '/add';
         return null;
       })()}
 
-
+      {/* Modal para ver información del libro */}
+      {showModal && selectedBook && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background: 'rgba(121,178,233,0.35)', backdropFilter: 'blur(6px)'}} onClick={closeBookModal}>
+          <div
+            className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6 animate-modal-pop"
+            style={{ animation: 'modal-pop 0.35s cubic-bezier(0.4,0,0.2,1)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-[#79b2e9] text-2xl font-bold focus:outline-none"
+              onClick={closeBookModal}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center">
+              <img
+                src={selectedBook.cover_image && selectedBook.cover_image.startsWith('http')
+                  ? selectedBook.cover_image
+                  : selectedBook.cover_image
+                    ? `http://localhost:3000/uploads/${selectedBook.cover_image}`
+                    : '/public/vite.svg'}
+                alt={selectedBook.title}
+                className="w-40 h-60 object-cover rounded-lg shadow mb-4 border"
+              />
+              <h2 className="text-2xl font-bold text-[#2366a8] mb-1 text-center">{selectedBook.title}</h2>
+              <p className="text-md text-[#2366a8] mb-2 text-center">{selectedBook.author?.name}</p>
+              <span className="text-xs bg-[#e3f0fb] text-[#2366a8] px-2 py-1 rounded-full mb-2">{selectedBook.category?.name}</span>
+              <p className="text-sm text-gray-700 mb-2 text-center">{selectedBook.description}</p>
+              <div className="grid grid-cols-2 gap-2 w-full mt-2">
+                <div className="text-xs text-gray-500">Año: <span className="font-semibold text-gray-700">{selectedBook.publication_year || 'N/A'}</span></div>
+                <div className="text-xs text-gray-500">ISBN: <span className="font-semibold text-gray-700">{selectedBook.isbn || 'N/A'}</span></div>
+                <div className="text-xs text-gray-500">Copias: <span className="font-semibold text-gray-700">{selectedBook.available_copies}</span></div>
+                <div className="text-xs text-gray-500">Vistas: <span className="font-semibold text-gray-700">{selectedBook.views || 0}</span></div>
+              </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes modal-pop {
+              0% { opacity: 0; transform: scale(0.85) translateY(40px); }
+              100% { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            .animate-modal-pop { animation: modal-pop 0.35s cubic-bezier(0.4,0,0.2,1); }
+            .animate-fade-in-fast { animation: fade-in 0.2s cubic-bezier(0.4,0,0.2,1); }
+          `}</style>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;

@@ -206,16 +206,16 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
       {/* HEADER solo para modo agregar */}
       {!isEditMode && (
         <div className="mb-8">
-          <header className="bg-amber-700 text-white rounded-t-xl shadow-md p-6 flex items-center justify-between">
+          <header className="bg-[#79b2e9] text-white rounded-t-xl shadow-md p-6 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <FaBook className="text-3xl" />
               <span className="text-2xl font-bold tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>Gestión de Libros</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="italic text-amber-100 text-sm">Biblioteca Virtual</span>
+              <span className="italic text-[#e3f0fb] text-sm">Biblioteca Virtual</span>
               <a
                 href="/"
-                className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-amber-800 transition-colors shadow"
+                className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-[#2366a8] transition-colors shadow"
               >
                 <FaArrowLeft className="mr-2" />
                 Regresar
@@ -233,7 +233,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         {/* Columna izquierda */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Título <span className="text-red-500">*</span>
             </label>
             <input
@@ -241,14 +241,14 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
               value={form.title}
               onChange={handleChange}
               placeholder="Ej: Cien años de soledad"
-              className={`w-full px-4 py-2 rounded-lg border ${errors.title ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.title ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
               required
             />
             {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Autor <span className="text-red-500">*</span>
             </label>
             <input
@@ -256,7 +256,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
               value={form.author_id}
               onChange={handleChange}
               placeholder="Ej: Gabriel García Márquez"
-              className={`w-full px-4 py-2 rounded-lg border ${errors.author_id ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.author_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
               required
               autoComplete="off"
             />
@@ -264,7 +264,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Categoría <span className="text-red-500">*</span>
             </label>
             <input
@@ -272,7 +272,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
               value={form.category_id}
               onChange={handleChange}
               placeholder="Ej: Novela, Ensayo, Ciencia Ficción..."
-              className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
               required
               autoComplete="off"
             />
@@ -281,19 +281,19 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Año de publicación</label>
+              <label className="block text-sm font-medium text-[#2366a8] mb-1">Año de publicación</label>
               <input
                 name="publication_year"
                 value={form.publication_year}
                 onChange={handleChange}
                 placeholder="Ej: 2023"
-                className={`w-full px-4 py-2 rounded-lg border ${errors.publication_year ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+                className={`w-full px-4 py-2 rounded-lg border ${errors.publication_year ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
               />
               {errors.publication_year && <p className="mt-1 text-sm text-red-500">{errors.publication_year}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Copias disponibles</label>
+              <label className="block text-sm font-medium text-[#2366a8] mb-1">Copias disponibles</label>
               <input
                 name="available_copies"
                 value={form.available_copies}
@@ -301,20 +301,20 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
                 placeholder="Ej: 5"
                 type="number"
                 min="0"
-                className={`w-full px-4 py-2 rounded-lg border ${errors.available_copies ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+                className={`w-full px-4 py-2 rounded-lg border ${errors.available_copies ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
               />
               {errors.available_copies && <p className="mt-1 text-sm text-red-500">{errors.available_copies}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ISBN</label>
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">ISBN</label>
             <input
               name="isbn"
               value={form.isbn}
               onChange={handleChange}
               placeholder="Ej: 978-3-16-148410-0"
-              className={`w-full px-4 py-2 rounded-lg border ${errors.isbn ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.isbn ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
             />
             {errors.isbn && <p className="mt-1 text-sm text-red-500">{errors.isbn}</p>}
           </div>
@@ -323,18 +323,18 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         {/* Columna derecha */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">Descripción</label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
               placeholder="Escribe una breve sinopsis del libro..."
               rows="4"
-              className={`w-full px-4 py-2 rounded-lg border ${errors.description ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.description ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9] resize-none`}
             />
             <div className="flex justify-between mt-1">
               <p
-                className={`text-xs ${form.description.length > 900 ? "text-amber-600" : "text-gray-500"} ${form.description.length > 1000 ? "text-red-500" : ""}`}
+                className={`text-xs ${form.description.length > 900 ? "text-[#79b2e9]" : "text-gray-500"} ${form.description.length > 1000 ? "text-red-500" : ""}`}
               >
                 {form.description.length}/1000 caracteres
               </p>
@@ -343,10 +343,10 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Portada del libro</label>
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">Portada del libro</label>
 
             {imagePreview ? (
-              <div className="relative w-full h-48 mb-2 rounded-lg overflow-hidden border border-gray-300">
+              <div className="relative w-full h-48 mb-2 rounded-lg overflow-hidden border border-[#79b2e9]">
                 <img
                   src={imagePreview}
                   alt="Vista previa"
@@ -364,15 +364,15 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
               <div
                 className={`w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer ${
                   isDragging
-                    ? "border-amber-500 bg-amber-50"
-                    : "border-gray-300 hover:border-amber-500 hover:bg-amber-50"
+                    ? "border-[#79b2e9] bg-[#e3f0fb]"
+                    : "border-[#79b2e9] hover:border-[#2366a8] hover:bg-[#e3f0fb]"
                 } transition-colors`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => document.getElementById("cover_image").click()}
               >
-                <FaUpload className="text-amber-500 text-2xl mb-2" />
+                <FaUpload className="text-[#79b2e9] text-2xl mb-2" />
                 <p className="text-sm text-gray-500">Arrastra una imagen o haz clic para seleccionar</p>
                 <p className="text-xs text-gray-400 mt-1">PNG, JPG o JPEG (máx. 5MB)</p>
               </div>
@@ -383,11 +383,11 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         </div>
 
         {/* Botones de acción - ocupan todo el ancho */}
-        <div className="col-span-1 md:col-span-2 flex justify-between mt-4 pt-4 border-t border-gray-200">
+        <div className="col-span-1 md:col-span-2 flex justify-between mt-4 pt-4 border-t border-[#79b2e9]">
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center px-4 py-2 border border-[#79b2e9] rounded-lg text-[#2366a8] hover:bg-[#e3f0fb] transition-colors"
           >
             <FaArrowLeft className="mr-2" />
             Cancelar
@@ -399,7 +399,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             className={`flex items-center px-6 py-2 rounded-lg text-white transition-colors ${
               isSubmitting || Object.keys(errors).length > 0
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-amber-700 hover:bg-amber-800"
+                : "bg-[#2366a8] hover:bg-[#79b2e9]"
             }`}
           >
             <FaSave className="mr-2" />
@@ -421,23 +421,23 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
       )}
 
       {isSubmitting && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-[#79b2e9]/40 flex items-center justify-center z-50 animate-fade-in">
           <div className="flex flex-col items-center animate-fade-in">
             <div className="relative mb-4">
-              <div className="w-16 h-16 border-4 border-amber-300 border-t-amber-700 rounded-full animate-spin"></div>
+              <div className="w-16 h-16 border-4 border-[#e3f0fb] border-t-[#2366a8] rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <FaBook className="text-amber-700 text-3xl animate-bounce" />
+                <FaBook className="text-[#2366a8] text-3xl animate-bounce" />
               </div>
             </div>
-            <span className="text-amber-800 font-semibold animate-pulse text-lg">Guardando libro...</span>
+            <span className="text-[#2366a8] font-semibold animate-pulse text-lg">Guardando libro...</span>
           </div>
         </div>
       )}
 
       {/* FOOTER solo para modo agregar */}
       {!isEditMode && (
-        <footer className="mt-10 bg-amber-50 border-t border-amber-200 py-6 rounded-b-xl shadow-inner text-center">
-          <p className="text-sm text-amber-700">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>
+        <footer className="mt-10 bg-[#e3f0fb] border-t border-[#79b2e9] py-6 rounded-b-xl shadow-inner text-center">
+          <p className="text-sm text-[#2366a8]">&copy; {new Date().getFullYear()} Biblioteca Virtual &mdash; CRUD desarrollado con Node.js, Express, MySQL y React</p>
         </footer>
       )}
     </div>
