@@ -363,8 +363,12 @@ export default function LoanDashboard() {
   // Formatear fecha para mostrar
   const formatDate = (dateString) => {
     if (!dateString) return "-"
+
     const date = new Date(dateString)
-    return date.toLocaleDateString()
+    const options = { year: "numeric", month: "2-digit", day: "2-digit" }
+    const formattedDate = date.toLocaleDateString("es-ES", options)
+
+    return formattedDate.replace(/\//g, "-")
   }
 
   // Calcular días restantes o de retraso
@@ -473,6 +477,17 @@ export default function LoanDashboard() {
       )}
 
       <div className="max-w-7xl mx-auto">
+        {/* Botón de regreso al dashboard */}
+        <div className="mb-6">
+          <button
+            className="flex items-center bg-gradient-to-r from-[#79b2e9] to-[#2366a8] hover:from-[#5a9de0] hover:to-[#1d5a9a] text-white px-4 py-2 rounded-lg shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
+            type="button"
+            onClick={() => window.location.replace('/dashboard')}
+          >
+            <span className="mr-2">←</span> Volver al Dashboard
+          </button>
+        </div>
+
         {/* Encabezado */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
