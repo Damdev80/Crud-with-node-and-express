@@ -34,6 +34,7 @@ class User {
   // Crear un nuevo usuario
   static async create(newUser) {
     try {
+      // Permitir password aunque no se use en la tabla (para compatibilidad futura)
       const [result] = await pool.query(
         'INSERT INTO users (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)',
         [newUser.first_name, newUser.last_name, newUser.email, newUser.phone]

@@ -22,13 +22,13 @@ export default function AddBook() {
     });
     setShowSuccess(true);
     setTimeout(() => {
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     }, 2000);
   };
 
   return (
     <div ref={containerRef} className={`p-6 transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
-      <h2 className="text-xl font-bold mb-4">Agregar Libro</h2>
+      
       <BookForm onSubmit={handleAdd} />
       {showSuccess && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">

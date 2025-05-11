@@ -371,11 +371,7 @@ const Dashboard = () => {
               Mi Biblioteca
             </h1>
           </div>
-          <nav className="flex flex-wrap gap-2 md:gap-4 mt-4 md:mt-0">
-            <a href="/" className="text-white hover:text-[#2366a8] font-medium transition-colors">Catálogo</a>
-            <a href="/author-dashboard" className="text-white hover:text-[#2366a8] font-medium transition-colors">Autores</a>
-            <a href="/loan-dashboard" className="text-white hover:text-[#2366a8] font-medium transition-colors">Préstamos</a>
-          </nav>
+          
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <button
               onClick={handleAddBookTransition}
