@@ -4,10 +4,9 @@ import pool from '../config/db.js';
 class User {
   constructor(user) {
     this.user_id = user.user_id;
-    this.first_name = user.first_name;
-    this.last_name = user.last_name;
+    this.name = user.name;
     this.email = user.email;
-    this.phone = user.phone;
+    this.password = user.password;
   }
 
   // Obtener todos los usuarios
@@ -34,10 +33,9 @@ class User {
   // Crear un nuevo usuario
   static async create(newUser) {
     try {
-      // Permitir password aunque no se use en la tabla (para compatibilidad futura)
       const [result] = await pool.query(
-        'INSERT INTO users (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)',
-        [newUser.first_name, newUser.last_name, newUser.email, newUser.phone]
+        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+        [newUser.name, newUser.email, newUser.password]
       );
       return new User({
         user_id: result.insertId,
@@ -52,12 +50,10 @@ class User {
   static async update(id, userData) {
     try {
       const [result] = await pool.query(
-        'UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE user_id = ?',
-        [userData.first_name, userData.last_name, userData.email, userData.phone, id]
+        'UPDATE users SET name = ?, email = ?, password = ? WHERE user_id = ?',
+        [userData.name, userData.email, userData.password, id]
       );
-      
       if (result.affectedRows === 0) return null;
-      
       return new User({
         user_id: id,
         ...userData
@@ -93,7 +89,7 @@ class User {
   }
 
   // Buscar usuarios por email
-  static async finpoolyEmail(email) {
+  static async findByEmail(email) {
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
       if (rows.length === 0) return null;

@@ -214,7 +214,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             <div className="flex items-center space-x-4">
               <span className="italic text-[#e3f0fb] text-sm">Biblioteca Virtual</span>
               <a
-                href="/"
+                href="/dashboard"
                 className="ml-4 flex items-center px-4 py-2 border border-white rounded-lg text-white hover:bg-[#2366a8] transition-colors shadow"
               >
                 <FaArrowLeft className="mr-2" />

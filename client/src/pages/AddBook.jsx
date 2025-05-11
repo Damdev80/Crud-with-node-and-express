@@ -29,13 +29,6 @@ export default function AddBook() {
   return (
     <div ref={containerRef} className={`p-6 transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
       {/* Botón de regreso al dashboard */}
-      <button
-        className="flex items-center bg-gradient-to-r from-[#79b2e9] to-[#2366a8] hover:from-[#5a9de0] hover:to-[#1d5a9a] text-white px-4 py-2 rounded-lg shadow-md mb-6 transition-all focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
-        type="button"
-        onClick={() => window.location.replace('/dashboard')}
-      >
-        <span className="mr-2">←</span> Volver al Dashboard
-      </button>
       <BookForm onSubmit={handleAdd} onCancel={() => window.location.replace('/dashboard')} />
       {showSuccess && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">

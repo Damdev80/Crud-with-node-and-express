@@ -16,21 +16,26 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
-
     if (!form.email || !form.password) {
       setError("Por favor, completa todos los campos")
       return
     }
-
     try {
       setLoading(true)
-      // Simulación de tiempo de carga
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Simulación de login exitoso
+      const res = await fetch("http://localhost:3000/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setError(data.message || "Error al iniciar sesión. Verifica tus credenciales.")
+        return
+      }
+      // Aquí podrías guardar el usuario en localStorage/sessionStorage si quieres sesión persistente
       navigate("/dashboard")
-    } catch (err) {
-      setError("Error al iniciar sesión. Verifica tus credenciales.")
+    } catch {
+      setError("Error de conexión con el servidor")
     } finally {
       setLoading(false)
     }

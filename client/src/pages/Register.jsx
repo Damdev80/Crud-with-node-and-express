@@ -88,12 +88,10 @@ export default function Register() {
       setError("Por favor, completa todos los campos")
       return
     }
-
     if (form.password !== form.confirm) {
       setError("Las contraseñas no coinciden")
       return
     }
-
     if (passwordStrength < 60) {
       setError("Por favor, utiliza una contraseña más segura")
       return
@@ -101,7 +99,6 @@ export default function Register() {
 
     try {
       setLoading(true)
-
       const res = await fetch("http://localhost:3000/api/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,19 +108,15 @@ export default function Register() {
           password: form.password,
         }),
       })
-
       const data = await res.json()
-
       if (!res.ok || !data.success) {
         setError(data.message || "Error al registrar usuario")
         return
       }
-
-      // Simulación de tiempo de carga para mejor UX
       setTimeout(() => {
         navigate("/login")
       }, 1000)
-    } catch (err) {
+    } catch {
       setError("Error de conexión con el servidor")
     } finally {
       setLoading(false)
@@ -203,6 +196,13 @@ export default function Register() {
                 required
               />
             </div>
+            {/* Advertencia si solo hay un nombre */}
+            {form.name.trim() && form.name.trim().split(" ").length === 1 && (
+              <div className="text-xs text-yellow-600 bg-yellow-50 rounded-lg px-3 py-2 mt-1 flex items-center gap-2">
+                <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>
+                Es recomendable ingresar también tu apellido
+              </div>
+            )}
           </div>
 
           {/* Email */}
