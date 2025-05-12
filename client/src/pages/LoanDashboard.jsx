@@ -56,9 +56,13 @@ export default function LoanDashboard() {
 
   // Cargar datos al montar el componente
   useEffect(() => {
-    fetchLoans()
-    fetchBooks()
-    fetchUsers()
+    // Cargar primero libros y usuarios, luego préstamos
+    const loadAll = async () => {
+      const booksData = await fetchBooks()
+      const usersData = await fetchUsers()
+      await fetchLoans(booksData, usersData)
+    }
+    loadAll()
   }, [])
 
   // Filtrar y ordenar préstamos cuando cambian los filtros
@@ -68,26 +72,6 @@ export default function LoanDashboard() {
     }
   }, [loans, searchTerm, filterStatus, sortConfig])
 
-  // Función para obtener préstamos
-  const fetchLoans = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const res = await fetch("http://localhost:3000/api/loans")
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
-      const data = await res.json()
-
-      // Enriquecer los datos con información de libros y usuarios
-      const enrichedLoans = await enrichLoansData(data)
-      setLoans(enrichedLoans)
-    } catch (err) {
-      console.error("Error fetching loans:", err)
-      setError(err.message || "Error al cargar los préstamos")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   // Función para obtener libros
   const fetchBooks = async () => {
     try {
@@ -95,9 +79,11 @@ export default function LoanDashboard() {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data = await res.json()
       setBooks(data.data || [])
+      return data.data || []
     } catch (err) {
       console.error("Error fetching books:", err)
       setBooks([])
+      return []
     }
   }
 
@@ -108,16 +94,52 @@ export default function LoanDashboard() {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data = await res.json()
       setUsers(data.data || [])
+      return data.data || []
     } catch (err) {
       console.error("Error fetching users:", err)
       setUsers([])
+      return []
+    }
+  }
+
+  // Función para obtener préstamos (ahora recibe books/users)
+  const fetchLoans = async (booksArg = books, usersArg = users) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("http://localhost:3000/api/loans")
+      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+      const data = await res.json()
+      const loansArray = Array.isArray(data) ? data : data.data
+      if (!Array.isArray(loansArray)) throw new Error("Respuesta inesperada de la API de préstamos")
+      // Enriquecer los datos con los arrays recibidos
+      const enrichedLoans = loansArray.map((loan) => {
+        const today = new Date()
+        const returnDate = loan.return_date ? new Date(loan.return_date) : null
+        let status = "active"
+        if (loan.actual_return_date) status = "returned"
+        else if (returnDate && returnDate < today) status = "overdue"
+        const book = booksArg.find((b) => b.book_id === loan.book_id)
+        const user = usersArg.find((u) => u.user_id === loan.user_id)
+        return {
+          ...loan,
+          status,
+          book_title: book ? book.title : `Libro #${loan.book_id}`,
+          user_name: user ? user.name : `Usuario #${loan.user_id}`,
+        }
+      })
+      setLoans(enrichedLoans)
+      filterAndSortLoans([...enrichedLoans])
+    } catch (err) {
+      console.error("Error fetching loans:", err)
+      setError(err.message || "Error al cargar los préstamos")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   // Enriquecer los datos de préstamos con información de libros y usuarios
-  const enrichLoansData = async (loans) => {
-    // En un entorno real, esto podría hacerse en el backend
-    // Aquí simulamos la obtención de datos adicionales
+  const enrichLoansData = (loans) => {
     return loans.map((loan) => {
       // Calcular estado del préstamo
       const today = new Date()
@@ -130,12 +152,15 @@ export default function LoanDashboard() {
         status = "overdue"
       }
 
+      // Buscar título del libro y nombre del usuario usando los arrays actuales
+      const book = books.find((b) => b.book_id === loan.book_id)
+      const user = users.find((u) => u.user_id === loan.user_id)
+
       return {
         ...loan,
         status,
-        // Estos datos se rellenarán cuando tengamos la información real
-        book_title: "Cargando...",
-        user_name: "Cargando...",
+        book_title: book ? book.title : `Libro #${loan.book_id}`,
+        user_name: user ? user.name : `Usuario #${loan.user_id}`,
       }
     })
   }
@@ -237,7 +262,9 @@ export default function LoanDashboard() {
       setShowForm(false)
       setEditLoan(null)
       resetForm()
-      fetchLoans()
+      const booksData = await fetchBooks()
+      const usersData = await fetchUsers()
+      await fetchLoans(booksData, usersData)
     } catch (err) {
       console.error("Error saving loan:", err)
       showNotification("error", `Error: ${err.message || "No se pudo guardar el préstamo"}`)
@@ -290,7 +317,9 @@ export default function LoanDashboard() {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
 
       showNotification("success", "Préstamo eliminado correctamente")
-      fetchLoans()
+      const booksData = await fetchBooks()
+      const usersData = await fetchUsers()
+      await fetchLoans(booksData, usersData) // Espera a que termine antes de continuar
     } catch (err) {
       console.error("Error deleting loan:", err)
       showNotification("error", `Error: ${err.message || "No se pudo eliminar el préstamo"}`)
@@ -307,12 +336,14 @@ export default function LoanDashboard() {
       const res = await fetch(`http://localhost:3000/api/loans/${loan.loan_id}/return`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ returned_date: new Date().toISOString().split("T")[0] }),
+        body: JSON.stringify({ actual_return_date: new Date().toISOString().split("T")[0] }),
       })
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       showNotification("success", "Libro marcado como devuelto correctamente")
-      fetchLoans()
+      const booksData = await fetchBooks()
+      const usersData = await fetchUsers()
+      await fetchLoans(booksData, usersData) // Espera a que termine antes de continuar
     } catch (err) {
       console.error("Error marking loan as returned:", err)
       showNotification("error", `Error: ${err.message || "No se pudo marcar como devuelto"}`)
@@ -357,7 +388,7 @@ export default function LoanDashboard() {
   // Obtener nombre del usuario por ID
   const getUserName = (userId) => {
     const user = users.find((u) => u.user_id === userId)
-    return user ? `${user.first_name} ${user.last_name}` : `Usuario #${userId}`
+    return user ? user.name : `Usuario #${userId}`
   }
 
   // Formatear fecha para mostrar
@@ -621,15 +652,14 @@ export default function LoanDashboard() {
                   name="user_id"
                   value={form.user_id}
                   onChange={handleInput}
-                  className={`w-full border ${
-                    formErrors.user_id ? "border-red-500" : "border-gray-300"
-                  } rounded-lg px-4 py-3 focus:border-[#79b2e9] focus:ring-2 focus:ring-[#79b2e9]/30 focus:outline-none transition-all`}
+                  className={`w-full border ${formErrors.user_id ? "border-red-500" : "border-gray-300"} rounded-lg px-4 py-3 focus:border-[#79b2e9] focus:ring-2 focus:ring-[#79b2e9]/30 focus:outline-none transition-all`}
                   required
+                  disabled={users.length === 0}
                 >
-                  <option value="">Selecciona un usuario</option>
+                  <option value="">{users.length === 0 ? "No hay usuarios disponibles" : "Selecciona un usuario"}</option>
                   {users.map((user) => (
                     <option key={user.user_id} value={user.user_id}>
-                      {user.first_name} {user.last_name}
+                      {user.name}
                     </option>
                   ))}
                 </select>
@@ -779,7 +809,9 @@ export default function LoanDashboard() {
             <div className="flex flex-wrap gap-2">
               <button
                 className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "all" ? "bg-[#2366a8] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  filterStatus === "all"
+                    ? "bg-[#2366a8] text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
                 onClick={() => setFilterStatus("all")}
               >
@@ -789,251 +821,107 @@ export default function LoanDashboard() {
                 className={`px-4 py-2 rounded-lg flex items-center ${
                   filterStatus === "active"
                     ? "bg-green-600 text-white"
-                    : "bg-green-100 text-green-800 hover:bg-green-200"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
                 onClick={() => setFilterStatus("active")}
               >
-                <FaCheckCircle className="mr-2" />
                 Activos
               </button>
               <button
                 className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "overdue" ? "bg-red-600 text-white" : "bg-red-100 text-red-800 hover:bg-red-200"
+                  filterStatus === "overdue"
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
                 onClick={() => setFilterStatus("overdue")}
               >
-                <FaExclamationTriangle className="mr-2" />
                 Vencidos
               </button>
               <button
                 className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "returned" ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                  filterStatus === "returned"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
                 onClick={() => setFilterStatus("returned")}
               >
-                <FaCalendarCheck className="mr-2" />
                 Devueltos
               </button>
             </div>
           </div>
         )}
 
-        {/* Estado de carga */}
-        {isLoading && !showForm && (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2366a8] mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando préstamos...</p>
-          </div>
-        )}
-
-        {/* Estado de error */}
-        {error && (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <FaExclamationTriangle className="text-red-500 text-2xl" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Error al cargar los préstamos</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              className="px-4 py-2 bg-[#2366a8] text-white rounded-lg hover:bg-[#79b2e9] transition-colors"
-              onClick={fetchLoans}
-            >
-              Intentar de nuevo
-            </button>
-          </div>
-        )}
-
-        {/* Lista de préstamos */}
-        {!isLoading && !error && (
-          <>
-            {filteredLoans.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-8 text-center">
-                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <FaSearch className="text-[#2366a8] text-2xl" />
+        {/* Aquí iría la tabla/lista de préstamos y paginación, etc. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredLoans.length === 0 ? (
+            <div className="col-span-full text-gray-500 text-center">No hay préstamos registrados.</div>
+          ) : (
+            filteredLoans.map((loan) => (
+              <div
+                key={loan.loan_id}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col justify-between border border-[#e3f0fb] relative animate-fade-in min-w-0
+                w-full "
+                
+              >
+                <div className="flex items-center mb-3 min-w-0">
+                  <div className="rounded-full bg-[#e3f0fb] p-3 mr-3">
+                    <FaBook className="text-[#2366a8] text-xl" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg text-[#2366a8] leading-tight mb-1 truncate">{loan.book_title}</h3>
+                    <p className="text-gray-500 text-sm flex items-center truncate">
+                      <FaUser className="mr-1 text-[#79b2e9]" /> {loan.user_name}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">No se encontraron préstamos</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm || filterStatus !== "all"
-                    ? "No hay préstamos que coincidan con tus criterios de búsqueda."
-                    : "Aún no hay préstamos registrados. ¡Registra tu primer préstamo!"}
-                </p>
-                {(searchTerm || filterStatus !== "all") && (
-                  <button
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                    onClick={() => {
-                      setSearchTerm("")
-                      setFilterStatus("all")
-                    }}
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredLoans.map((loan) => {
-                  const daysRemaining = getDaysRemaining(loan)
-                  const bookTitle = getBookTitle(loan.book_id)
-                  const userName = getUserName(loan.user_id)
-
-                  return (
-                    <div
-                      key={loan.loan_id}
-                      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-[#e3f0fb] animate-fade-in"
+                <div className="flex flex-col gap-1 mb-3 w-auto">
+                  <div className="flex items-center text-gray-600 text-sm">
+                    <FaCalendarAlt className="mr-2 text-[#79b2e9]" />
+                    <span>Préstamo: <span className="font-medium">{formatDate(loan.loan_date)}</span></span>
+                  </div>
+                  <div className="flex items-center text-gray-600 text-sm">
+                    <FaCalendarCheck className="mr-2 text-[#79b2e9]" />
+                    <span>Devolución: <span className="font-medium">{formatDate(loan.return_date)}</span></span>
+                  </div>
+                </div>
+                <div className="flex items-center mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(loan.status)} flex items-center`}>
+                    {getStatusIcon(loan.status)} {getStatusText(loan.status)}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-auto w-full">
+                  {loan.status !== "returned" && (
+                    <button
+                      className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center justify-center transition-colors min-w-0"
+                      onClick={() => handleMarkAsReturned(loan)}
+                      title="Marcar como devuelto"
+                      style={{ wordBreak: 'break-word' }}
                     >
-                      <div className="p-6">
-                        {/* Cabecera con estado */}
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                            <FaBook className="mr-2 text-[#2366a8]" />
-                            <span className="truncate">{bookTitle}</span>
-                          </h3>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(
-                              loan.status,
-                            )}`}
-                          >
-                            {getStatusIcon(loan.status)}
-                            {getStatusText(loan.status)}
-                          </span>
-                        </div>
-
-                        {/* Información del préstamo */}
-                        <div className="space-y-2 mb-4">
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <FaUser className="mr-2 text-[#79b2e9]" />
-                            {userName}
-                          </p>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <FaCalendarAlt className="mr-2 text-[#79b2e9]" />
-                            Préstamo: {formatDate(loan.loan_date)}
-                          </p>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <FaCalendarCheck className="mr-2 text-[#79b2e9]" />
-                            Devolución prevista: {formatDate(loan.return_date)}
-                          </p>
-                          {loan.returned_date && (
-                            <p className="text-sm text-gray-600 flex items-center">
-                              <FaCheckCircle className="mr-2 text-green-500" />
-                              Devuelto el: {formatDate(loan.returned_date)}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Días restantes o de retraso */}
-                        {daysRemaining !== null && loan.status !== "returned" && (
-                          <div
-                            className={`text-sm font-medium mb-4 ${
-                              daysRemaining < 0
-                                ? "text-red-600"
-                                : daysRemaining <= 2
-                                  ? "text-yellow-600"
-                                  : "text-green-600"
-                            }`}
-                          >
-                            {daysRemaining < 0
-                              ? `${Math.abs(daysRemaining)} días de retraso`
-                              : daysRemaining === 0
-                                ? "Vence hoy"
-                                : `${daysRemaining} días restantes`}
-                          </div>
-                        )}
-
-                        {/* Acciones */}
-                        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                          <div className="flex space-x-2">
-                            <button
-                              className="p-2 bg-[#e3f0fb] text-[#2366a8] rounded-lg hover:bg-[#79b2e9] hover:text-white transition-colors"
-                              onClick={() => handleEdit(loan)}
-                              title="Editar préstamo"
-                            >
-                              <FaEdit />
-                            </button>
-                            <button
-                              className="p-2 bg-red-100 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
-                              onClick={() => handleDeleteConfirm(loan)}
-                              title="Eliminar préstamo"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-
-                          {loan.status !== "returned" && (
-                            <button
-                              className="px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition-colors text-sm flex items-center"
-                              onClick={() => handleMarkAsReturned(loan)}
-                            >
-                              <FaCheckCircle className="mr-1" />
-                              Marcar como devuelto
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                      <FaCheck className="mr-1" /> Devolver
+                    </button>
+                  )}
+                  <button
+                    className="p-2  bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 flex items-center justify-center transition-colors min-w-0"
+                    onClick={() => handleEdit(loan)}
+                    title="Editar"
+                    style={{ wordBreak: 'break-word' }}
+                  >
+                    <FaEdit className="mr-1" /> 
+                  </button>
+                  <button
+                    className="p-2   bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center justify-center transition-colors min-w-0"
+                    onClick={() => handleDeleteConfirm(loan)}
+                    title="Eliminar"
+                    style={{ wordBreak: 'break-word' }}
+                  >
+                    <FaTrash className="mr-1" /> 
+                  </button>
+                </div>
               </div>
-            )}
-          </>
-        )}
+            ))
+          )}
+        </div>
       </div>
-
-      {/* Estilos CSS para animaciones */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideIn {
-          from {
-            transform: translateY(-20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideDown {
-          from {
-            max-height: 0;
-            opacity: 0;
-          }
-          to {
-            max-height: 2000px;
-            opacity: 1;
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .animate-slide-down {
-          animation: slideDown 0.3s ease-out;
-        }
-
-        .animate-modal {
-          animation: scaleIn 0.3s ease-out;
-        }
-      `}</style>
     </div>
   )
 }

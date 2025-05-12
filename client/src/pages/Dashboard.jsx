@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa"
 import {Footer} from "../components/Footer"
 import { getCategories, getAuthors } from '../services/filterService';
+import { getLoans } from '../services/loanService';
 
 const Dashboard = () => {
   const [books, setBooks] = useState([])
@@ -38,6 +39,7 @@ const Dashboard = () => {
     authors: 0,
     recentlyAdded: 0,
     mostViewed: null,
+    loans: 0,
   })
   const [pageTransition, setPageTransition] = useState(false)
   const containerRef = useRef(null)
@@ -69,20 +71,31 @@ const Dashboard = () => {
     }
   }, [books, searchTerm, selectedCategory, selectedAuthor])
 
+  // Actualizar autores y préstamos cada vez que se agregue/borre un libro o autor
   useEffect(() => {
-    // Obtener categorías y autores del backend
+    // Obtener categorías
     getCategories().then(setCategories).catch(() => setCategories([]));
-    getAuthors()
-      .then((data) => {
-        // Mapear autores para combinar first_name y last_name en name
-        const mappedAuthors = data.map((author) => ({
-          ...author,
-          name: author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim(),
-        }));
-        setAuthors(mappedAuthors);
+    // Obtener autores y actualizar stats
+    const updateAuthors = async () => {
+      try {
+        const data = await getAuthors();
+        // Si la respuesta es { success, data }
+        const authorsArr = Array.isArray(data) ? data : data.data;
+        setAuthors(authorsArr);
+        setStats((prev) => ({ ...prev, authors: authorsArr.length }));
+      } catch {
+        setAuthors([]);
+        setStats((prev) => ({ ...prev, authors: 0 }));
+      }
+    };
+    updateAuthors();
+    // Obtener préstamos y actualizar stats
+    getLoans()
+      .then((loans) => {
+        setStats((prev) => ({ ...prev, loans: loans.length }));
       })
-      .catch(() => setAuthors([]));
-  }, []);
+      .catch(() => setStats((prev) => ({ ...prev, loans: 0 })));
+  }, [books]);
 
   const fetchBooks = async () => {
     setIsLoading(true)
@@ -410,7 +423,7 @@ const Dashboard = () => {
             icon: <FaCalendarAlt className="text-purple-700 text-xl" />, 
             bg: "bg-purple-100", 
             label: "Préstamos", 
-            value: stats.recentlyAdded, // Puedes cambiar esto por stats.loans si tienes ese dato
+            value: stats.loans,
             onClick: () => window.location.href = '/loan-dashboard'
           }].map((stat, idx) => (
             <div

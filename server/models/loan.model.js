@@ -185,7 +185,7 @@ class Loan {
   static async getAllWithDetails() {
     try {
       const [rows] = await pool.query(`
-        SELECT l.*, b.title AS book_title, u.first_name, u.last_name, u.email
+        SELECT l.*, b.title AS book_title, u.name AS user_name, u.email
         FROM loans l
         JOIN books b ON l.book_id = b.book_id
         JOIN users u ON l.user_id = u.user_id
@@ -201,7 +201,7 @@ class Loan {
     try {
       const today = new Date().toISOString().split('T')[0];
       const [rows] = await pool.query(`
-        SELECT l.*, b.title AS book_title, u.first_name, u.last_name, u.email
+        SELECT l.*, b.title AS book_title, u.name AS user_name, u.email
         FROM loans l
         JOIN books b ON l.book_id = b.book_id
         JOIN users u ON l.user_id = u.user_id

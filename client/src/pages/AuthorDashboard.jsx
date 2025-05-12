@@ -538,7 +538,7 @@ export default function AuthorDashboard() {
           </div>
         </div>
 
-        {/* Tabla de autores */}
+        {/* Grid de autores como cards visuales */}
         <div className="bg-white rounded-xl shadow-md p-4 mb-8">
           {isLoading ? (
             <div className="py-4 text-center">
@@ -555,75 +555,65 @@ export default function AuthorDashboard() {
               No se encontraron autores que coincidan con tu búsqueda.
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Nombre
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Nacionalidad
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Libros
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right">
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAuthors.map((author) => (
-                  <tr key={author.author_id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${getAvatarColor(
-                            author.first_name + author.last_name,
-                          )}`}
-                        >
-                          <span className="text-white font-semibold text-lg">
-                            {getInitials(author.first_name, author.last_name)}
-                          </span>
-                        </div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {author.first_name} {author.last_name}
-                        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredAuthors.map((author) => (
+                <motion.div
+                  key={author.author_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="relative bg-gradient-to-br from-[#e3f0fb] to-[#b3d8f7] rounded-2xl shadow-lg p-6 flex flex-col justify-between min-h-[260px]"
+                >
+                  <div className="flex items-center mb-4">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 text-xl font-bold ${getAvatarColor(
+                        (author.first_name || "") + (author.last_name || "")
+                      )}`}
+                    >
+                      <span className="text-white">
+                        {getInitials(author.first_name, author.last_name)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold text-[#2366a8]">
+                        {author.first_name} {author.last_name}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {author.nationality || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {author.book_count || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <FaGlobe className="mr-1" />
+                        {author.nationality || "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 mb-4">
+                    <div className="text-gray-700 text-sm line-clamp-3 mb-2">
+                      {author.biography ? author.biography : <span className="italic text-gray-400">Sin biografía</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center text-[#2366a8] font-medium">
+                      <FaBook className="mr-1" />
+                      {author.book_count || 0} libro{author.book_count === 1 ? "" : "s"}
+                    </div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(author)}
-                        className="text-[#2366a8] hover:text-[#1d5a9a] transition-colors"
+                        className="p-2 rounded-full bg-[#2366a8] hover:bg-[#1d5a9a] text-white transition-colors shadow"
+                        title="Editar autor"
                       >
-                        <FaEdit className="w-5 h-5 inline-block" />
+                        <FaEdit />
                       </button>
                       <button
                         onClick={() => confirmDelete(author)}
-                        className="text-red-500 hover:text-red-600 transition-colors ml-4"
+                        className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow"
+                        title="Eliminar autor"
                       >
-                        <FaTrash className="w-5 h-5 inline-block" />
+                        <FaTrash />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
       </div>
