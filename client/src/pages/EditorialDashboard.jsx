@@ -140,6 +140,13 @@ export default function EditorialDashboard() {
   return (
     <div style={{ background: "#e3f0fb", minHeight: "100vh", padding: 32 }}>
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px #b6d4f5", padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+        {/* Botón de regreso */}
+        <button
+          onClick={() => window.history.back()}
+          style={{ background: "#e3f0fb", color: "#2366a8", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 600, cursor: "pointer", marginBottom: 24, display: "flex", alignItems: "center", gap: 6 }}
+        >
+          <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>←</span> Volver
+        </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: "#2366a8", display: "flex", alignItems: "center", gap: 8 }}>
