@@ -5,6 +5,7 @@ import bookRoutes from './routes/book.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import loanRoutes from './routes/loan.routes.js';
 import userRoutes from './routes/user.routes.js';
+import editorialRoutes from './routes/editorial.routes.js';
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/editorials', editorialRoutes);
 
 
 app.listen(PORT,()=> {

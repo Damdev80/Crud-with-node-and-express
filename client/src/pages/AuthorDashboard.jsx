@@ -539,7 +539,7 @@ export default function AuthorDashboard() {
         </div>
 
         {/* Grid de autores como cards visuales */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-8">
+        <div className="">
           {isLoading ? (
             <div className="py-4 text-center">
               <FaSpinner className="animate-spin text-[#2366a8] h-6 w-6 mx-auto" />
@@ -562,7 +562,7 @@ export default function AuthorDashboard() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="relative bg-gradient-to-br from-[#e3f0fb] to-[#b3d8f7] rounded-2xl shadow-lg p-6 flex flex-col justify-between min-h-[260px]"
+                  className="relative bg-[#fff] rounded-2xl shadow-lg p-6 flex flex-col justify-between min-h-[260px]"
                 >
                   <div className="flex items-center mb-4">
                     <div

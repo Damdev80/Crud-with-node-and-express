@@ -7,6 +7,8 @@ import AuthorDashboard from './pages/AuthorDashboard';
 import LoanDashboard from './pages/LoanDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CategoryDashboard from './pages/CategoryDashboard';
+import EditorialDashboard from './pages/EditorialDashboard';
 
 export function App() {
   return (
@@ -19,6 +21,8 @@ export function App() {
       <Route path="/loan-dashboard" element={<LoanDashboard />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/category-dashboard" element={<CategoryDashboard />} />
+      <Route path="/editorial-dashboard" element={<EditorialDashboard />} />
     </Routes>
   );
 }

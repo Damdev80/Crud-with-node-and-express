@@ -96,9 +96,9 @@ export default function EditBook() {
   // Renderizar estado de carga
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#79b2e9] flex items-center justify-center p-6">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-700 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#79b2e9] mx-auto mb-4"></div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Cargando libro</h2>
           <p className="text-gray-600">Obteniendo información del libro...</p>
         </div>
@@ -109,7 +109,7 @@ export default function EditBook() {
   // Renderizar estado de error
   if (error && !book) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#79b2e9] flex items-center justify-center p-6">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="rounded-full bg-red-100 p-3 w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <FaExclamationTriangle className="text-red-500 text-2xl" />
@@ -119,7 +119,7 @@ export default function EditBook() {
           <div className="flex justify-center space-x-4">
             <button
               onClick={handleRetry}
-              className="px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors"
+              className="px-4 py-2 bg-[#79b2e9] text-white rounded-lg hover:bg-[#2366a8] transition-colors"
             >
               Intentar de nuevo
             </button>
@@ -138,7 +138,7 @@ export default function EditBook() {
   // Renderizar confirmación de éxito
   if (showConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#79b2e9] flex items-center justify-center p-6">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="rounded-full bg-green-100 p-3 w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <svg
@@ -160,21 +160,21 @@ export default function EditBook() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 py-8 px-4 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#79b2e9] py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Botón para volver */}
         <button
           onClick={handleCancel}
-          className="flex items-center text-amber-700 hover:text-amber-900 mb-6 transition-colors"
+          className="flex items-center text-[#2366a8] hover:text-[#17406a] mb-6 transition-colors font-semibold"
         >
           <FaArrowLeft className="mr-2" />
           <span>Volver al catálogo</span>
         </button>
 
         {/* Contenedor principal */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[#79b2e9]">
           {/* Cabecera */}
-          <div className="bg-amber-900 text-white px-6 py-4 flex items-center">
+          <div className="bg-[#79b2e9] text-white px-6 py-4 flex items-center">
             <FaBook className="text-2xl mr-3" />
             <h1 className="text-xl font-bold">Editar Libro</h1>
           </div>
@@ -194,8 +194,8 @@ export default function EditBook() {
             {book && (
               <>
                 <div className="mb-6 pb-4 border-b border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-800">{book.title}</h2>
-                  {book.author && <p className="text-gray-600">por {book.author.name}</p>}
+                  <h2 className="text-2xl font-bold text-[#2366a8]">{book.title}</h2>
+                  {book.author && <p className="text-[#17406a]">por {book.author.name}</p>}
                 </div>
 
                 <BookForm
@@ -218,13 +218,13 @@ export default function EditBook() {
         <div className="fixed bottom-4 right-4 flex space-x-2 md:hidden">
           <button
             onClick={handleCancel}
-            className="bg-white text-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+            className="bg-white text-[#2366a8] p-3 rounded-full shadow-lg hover:bg-[#e3f0fb] border border-[#79b2e9] transition-colors"
           >
             <FaTimes />
           </button>
           <button
             onClick={() => document.querySelector('form button[type="submit"]').click()}
-            className="bg-amber-700 text-white p-3 rounded-full shadow-lg hover:bg-amber-800 transition-colors"
+            className="bg-gradient-to-r from-[#2366a8] to-[#79b2e9] text-white p-3 rounded-full shadow-lg hover:from-[#17406a] hover:to-[#2366a8] transition-colors"
             disabled={isSaving}
           >
             <FaSave />

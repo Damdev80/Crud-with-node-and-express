@@ -19,8 +19,11 @@ import {
 import {Footer} from "../components/Footer"
 import { getCategories, getAuthors } from '../services/filterService';
 import { getLoans } from '../services/loanService';
+import CategoryDashboard from "./CategoryDashboard";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [books, setBooks] = useState([])
   const [filteredBooks, setFilteredBooks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -49,6 +52,7 @@ const Dashboard = () => {
   const paginatedBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [loans, setLoans] = useState([]);
 
   // Categorías de ejemplo
   const exampleCategories = [
@@ -91,10 +95,14 @@ const Dashboard = () => {
     updateAuthors();
     // Obtener préstamos y actualizar stats
     getLoans()
-      .then((loans) => {
-        setStats((prev) => ({ ...prev, loans: loans.length }));
+      .then((loansData) => {
+        setLoans(loansData || []);
+        setStats((prev) => ({ ...prev, loans: loansData.length }));
       })
-      .catch(() => setStats((prev) => ({ ...prev, loans: 0 })));
+      .catch(() => {
+        setLoans([]);
+        setStats((prev) => ({ ...prev, loans: 0 }));
+      });
   }, [books]);
 
   const fetchBooks = async () => {
@@ -247,13 +255,9 @@ const Dashboard = () => {
 
   const calculateStats = () => {
     // Calcular estadísticas básicas
-    const totalBooks = books.length
-    const availableBooks = books.filter((book) => book.available_copies > 0).length
-
-    // Obtener categorías únicas
-    const uniqueCategories = new Set(books.map((book) => book.category_id))
-
-    // Obtener autores únicos (soporta string y objeto)
+    const totalBooks = books.length;
+    const availableBooks = books.filter((book) => book.available_copies > 0).length;
+    const uniqueCategories = new Set(books.map((book) => book.category_id));
     const uniqueAuthors = new Set(
       books
         .map((book) => {
@@ -263,16 +267,13 @@ const Dashboard = () => {
           return null;
         })
         .filter(Boolean)
-    )
-
-    // Libros añadidos en los últimos 30 días (soporta distintos formatos de fecha)
+    );
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
     const recentlyAdded = books.filter((book) => {
       if (!book.added_date) return false;
       let addedDate;
       if (typeof book.added_date === 'string') {
-        // Soporta formatos YYYY-MM-DD y fechas ISO
         addedDate = new Date(book.added_date);
       } else if (book.added_date instanceof Date) {
         addedDate = book.added_date;
@@ -282,10 +283,17 @@ const Dashboard = () => {
       return !isNaN(addedDate) && addedDate >= thirtyDaysAgo;
     }).length;
 
-    // Libro más visto
-    let mostViewed = null
-    if (books.length > 0) {
-      mostViewed = books.reduce((prev, current) => ((prev.views || 0) > (current.views || 0) ? prev : current))
+    // Libro más rentado (por cantidad de préstamos)
+    let mostRented = null;
+    if (books.length > 0 && Array.isArray(loans) && loans.length > 0) {
+      const loanCounts = {};
+      loans.forEach((loan) => {
+        if (!loan.book_id) return;
+        loanCounts[loan.book_id] = (loanCounts[loan.book_id] || 0) + 1;
+      });
+      const mostRentedBookId = Object.keys(loanCounts).reduce((a, b) => loanCounts[a] > loanCounts[b] ? a : b);
+      mostRented = books.find((b) => String(b.book_id) === String(mostRentedBookId));
+      if (mostRented) mostRented.rentCount = loanCounts[mostRentedBookId];
     }
 
     setStats({
@@ -294,8 +302,9 @@ const Dashboard = () => {
       categories: uniqueCategories.size,
       authors: uniqueAuthors.size,
       recentlyAdded,
-      mostViewed,
-    })
+      mostViewed: mostRented, // Cambiado a mostRented
+      loans: loans.length,
+    });
   }
 
   const handleSearch = (e) => {
@@ -373,6 +382,32 @@ const Dashboard = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory, selectedAuthor]);
 
+  const statCards = [{
+    icon: <FaBookOpen className="text-[#2366a8] text-xl" />, 
+    bg: "bg-[#e3f0fb]", 
+    label: "Total de Libros", 
+    value: stats.totalBooks,
+    onClick: () => navigate('/editorial-dashboard')
+  }, {
+    icon: <FaBook className="text-green-700 text-xl" />, 
+    bg: "bg-green-100", 
+    label: "Categoría", 
+    value: stats.categories,
+    onClick: () => navigate('/category-dashboard')
+  }, {
+    icon: <FaUserFriends className="text-[#79b2e9] text-xl" />, 
+    bg: "bg-[#e3f0fb]", 
+    label: "Autores", 
+    value: stats.authors,
+    onClick: () => navigate('/author-dashboard')
+  }, {
+    icon: <FaCalendarAlt className="text-purple-700 text-xl" />, 
+    bg: "bg-purple-100", 
+    label: "Préstamos", 
+    value: stats.loans,
+    onClick: () => navigate('/loan-dashboard')
+  }];
+
   return (
     <div ref={containerRef} className={`min-h-screen bg-[#f7fafc] transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
       {/* Cabecera */}
@@ -401,31 +436,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Tarjetas de estadísticas con animación fade-in escalonada y navegación */}
-          {[{
-            icon: <FaBookOpen className="text-[#2366a8] text-xl" />, 
-            bg: "bg-[#e3f0fb]", 
-            label: "Total de Libros", 
-            value: stats.totalBooks,
-            onClick: null
-          }, {
-            icon: <FaBook className="text-green-700 text-xl" />, 
-            bg: "bg-green-100", 
-            label: "Libros Disponibles", 
-            value: stats.availableBooks,
-            onClick: null
-          }, {
-            icon: <FaUserFriends className="text-[#79b2e9] text-xl" />, 
-            bg: "bg-[#e3f0fb]", 
-            label: "Autores", 
-            value: stats.authors,
-            onClick: () => window.location.href = '/author-dashboard'
-          }, {
-            icon: <FaCalendarAlt className="text-purple-700 text-xl" />, 
-            bg: "bg-purple-100", 
-            label: "Préstamos", 
-            value: stats.loans,
-            onClick: () => window.location.href = '/loan-dashboard'
-          }].map((stat, idx) => (
+          {statCards.map((stat, idx) => (
             <div
               key={stat.label}
               className="bg-white rounded-xl shadow-md p-6 flex items-center cursor-pointer hover:bg-[#e3f0fb] transition-colors"
@@ -468,10 +479,17 @@ const Dashboard = () => {
                 />
               </div>
               <div className="animate-fade-in">
-                <h3 className="text-lg font-bold text-gray-800 animate-fade-in animate-delay-200">{stats.mostViewed.title}</h3>
-                <p className="text-gray-600 animate-fade-in animate-delay-300">{stats.mostViewed.author?.name}</p>
+                <h3 className="text-lg font-bold text-gray-800 animate-fade-in animate-delay-200">{stats.mostViewed?.title || 'Sin datos'}</h3>
+                <p className="text-gray-600 animate-fade-in animate-delay-300">
+                  {stats.mostViewed?.author?.name
+                    || (stats.mostViewed && typeof stats.mostViewed.author === 'object' && `${stats.mostViewed.author.first_name || ''} ${stats.mostViewed.author.last_name || ''}`.trim())
+                    || (typeof stats.mostViewed?.author === 'string' && stats.mostViewed.author)
+                    || authors.find(a => String(a.id || a.author_id) === String(stats.mostViewed?.author_id))?.name
+                    || authors.find(a => String(a.id || a.author_id) === String(stats.mostViewed?.author_id)) && `${authors.find(a => String(a.id || a.author_id) === String(stats.mostViewed?.author_id))?.first_name || ''} ${authors.find(a => String(a.id || a.author_id) === String(stats.mostViewed?.author_id))?.last_name || ''}`.trim()
+                    || 'Autor desconocido'}
+                </p>
                 <p className="text-sm text-gray-500 mt-2 animate-fade-in animate-delay-400">
-                  <span className="font-medium">{stats.mostViewed.views}</span> visualizaciones
+                  <span className="font-medium">{stats.mostViewed?.rentCount || 0}</span> préstamos
                 </p>
                 <p className="text-sm text-gray-500 mt-1 animate-fade-in animate-delay-500">
                   {stats.mostViewed.available_copies}{" "}
@@ -522,11 +540,14 @@ const Dashboard = () => {
                 <select
                   value={selectedAuthor}
                   onChange={e => setSelectedAuthor(e.target.value)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-black bg-white focus:ring-2 focus:ring-[#79b2e9]"
+                  style={{ color: '#111' }}
                 >
                   <option value="all">Todos los autores</option>
                   {authors.map((author) => (
-                    <option key={author.id || author.author_id} value={author.id || author.author_id}>{author.name}</option>
+                    <option key={author.id || author.author_id} value={author.id || author.author_id}>
+                      {author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim()}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -658,11 +679,20 @@ const Dashboard = () => {
                         <h3 className="font-bold text-gray-800 mb-1 line-clamp-1">{book.title}</h3>
                         <p className="text-sm text-[#2366a8] mb-2 cursor-pointer hover:underline" onClick={() => window.location.href = '/author-dashboard'}>
                           {/* Mostrar autor correctamente, incluso si viene como string o id */}
-                          {book.author?.name || book.author || authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.name || 'Autor desconocido'}
+                          {book.author?.name
+                            || (book.author && typeof book.author === 'object' && `${book.author.first_name || ''} ${book.author.last_name || ''}`.trim())
+                            || (typeof book.author === 'string' && book.author)
+                            || authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.name
+                            || authors.find(a => String(a.id || a.author_id) === String(book.author_id)) && `${authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.first_name || ''} ${authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.last_name || ''}`.trim()
+                            || 'Autor desconocido'}
                         </p>
                         <div className="flex justify-between items-center">
                           <span className="text-xs bg-[#e3f0fb] text-[#2366a8] px-2 py-1 rounded-full">
-                            {book.category?.name}
+                            {book.category?.name ||
+                              categories.find(
+                                (cat) => String(cat.id || cat.category_id) === String(book.category_id)
+                              )?.name ||
+                              'Sin categoría'}
                           </span>
                           <span className="text-xs text-gray-500">{book.available_copies} disponibles</span>
                         </div>
@@ -683,7 +713,7 @@ const Dashboard = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-800">{book.title}</h3>
-                        <p className="text-sm text-[#2366a8]">
+                        <p className="text-sm text-[#2344a8]">
                           {book.author?.name || book.author || authors.find(a => String(a.id || a.author_id) === String(book.author_id))?.name || 'Autor desconocido'}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
@@ -692,7 +722,11 @@ const Dashboard = () => {
                       </div>
                       <div className="text-right">
                         <span className="text-xs bg-[#e3f0fb] text-[#2366a8] px-2 py-1 rounded-full">
-                          {book.category?.name}
+                          {book.category?.name ||
+                            categories.find(
+                              (cat) => String(cat.id || cat.category_id) === String(book.category_id)
+                            )?.name ||
+                            'Sin categoría'}
                         </span>
                         <p className="text-sm text-gray-500 mt-1">
                           {book.available_copies} {book.available_copies === 1 ? "copia" : "copias"}

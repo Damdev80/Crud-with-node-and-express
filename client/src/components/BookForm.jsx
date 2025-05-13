@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react"
 import { FaBook, FaUpload, FaTimes, FaSave, FaArrowLeft } from "react-icons/fa"
+import { getAuthors, getCategories, getEditorials } from '../services/filterService';
 
 const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const [form, setForm] = useState({
     title: initialData.title || "",
     author_id: initialData.author_id || "",
     category_id: initialData.category_id || "",
+    editorial_id: initialData.editorial_id || "",
     publication_year: initialData.publication_year || "",
     isbn: initialData.isbn || "",
     available_copies: initialData.available_copies || "",
@@ -15,6 +17,10 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
 
   const [errors, setErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState("");
+  const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [editorials, setEditorials] = useState([]);
+
   // Inicializar imagePreview correctamente para edición y nuevo libro
   const initialImagePreview = initialData.cover_image
     ? (initialData.cover_image.startsWith('http')
@@ -42,6 +48,12 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
       newErrors.category_id = "La categoría es obligatoria"
     } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.category_id.trim())) {
       newErrors.category_id = "La categoría solo puede contener letras y espacios"
+    }
+    // Validación de editorial (solo letras, espacios y acentos)
+    if (typeof form.editorial_id !== "string" || !form.editorial_id.trim()) {
+      newErrors.editorial_id = "La editorial es obligatoria"
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.editorial_id.trim())) {
+      newErrors.editorial_id = "La editorial solo puede contener letras y espacios"
     }
 
     if (form.publication_year) {
@@ -82,6 +94,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         title: initialData.title || "",
         author_id: initialData.author?.name || initialData.author || initialData.author_id || "",
         category_id: initialData.category?.name || initialData.category || initialData.category_id || "",
+        editorial_id: initialData.editorial?.name || initialData.editorial || initialData.editorial_id || "",
         publication_year: initialData.publication_year || "",
         isbn: initialData.isbn || "",
         available_copies: initialData.available_copies || "",
@@ -97,6 +110,22 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
       );
     }
   }, [initialData]);
+
+  useEffect(() => {
+    // Cargar autores, categorías y editoriales al montar
+    getAuthors().then(res => {
+      const arr = Array.isArray(res) ? res : res.data;
+      setAuthors(arr || []);
+    }).catch(() => setAuthors([]));
+    getCategories().then(res => {
+      const arr = Array.isArray(res) ? res : res.data;
+      setCategories(arr || []);
+    }).catch(() => setCategories([]));
+    getEditorials().then(res => {
+      const arr = Array.isArray(res) ? res : res.data;
+      setEditorials(arr || []);
+    }).catch(() => setEditorials([]));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -156,9 +185,11 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         ...form,
         author_name: form.author_id,
         category_name: form.category_id,
+        editorial_name: form.editorial_id,
       };
       delete dataToSend.author_id;
       delete dataToSend.category_id;
+      delete dataToSend.editorial_id;
 
       // Si no se seleccionó una nueva imagen, eliminar cover_image para no sobreescribir
       if (!form.cover_image) {
@@ -174,6 +205,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           title: "",
           author_id: "",
           category_id: "",
+          editorial_id: "",
           publication_year: "",
           isbn: "",
           available_copies: "",
@@ -251,15 +283,20 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Autor <span className="text-red-500">*</span>
             </label>
-            <input
+            <select
               name="author_id"
               value={form.author_id}
               onChange={handleChange}
-              placeholder="Ej: Gabriel García Márquez"
-              className={`w-full px-4 py-2 rounded-lg border ${errors.author_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.author_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9] bg-white text-black`}
               required
-              autoComplete="off"
-            />
+            >
+              <option value="">Selecciona un autor</option>
+              {authors.map(author => (
+                <option key={author.author_id || author.id} value={author.name || author.first_name || author.last_name || author.id || author.author_id}>
+                  {author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim()}
+                </option>
+              ))}
+            </select>
             {errors.author_id && <p className="mt-1 text-sm text-red-500">{errors.author_id}</p>}
           </div>
 
@@ -267,16 +304,42 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Categoría <span className="text-red-500">*</span>
             </label>
-            <input
+            <select
               name="category_id"
               value={form.category_id}
               onChange={handleChange}
-              placeholder="Ej: Novela, Ensayo, Ciencia Ficción..."
-              className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9]`}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.category_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9] bg-white text-black`}
               required
-              autoComplete="off"
-            />
+            >
+              <option value="">Selecciona una categoría</option>
+              {categories.map(cat => (
+                <option key={cat.category_id || cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
             {errors.category_id && <p className="mt-1 text-sm text-red-500">{errors.category_id}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#2366a8] mb-1">
+              Editorial <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="editorial_id"
+              value={form.editorial_id || ''}
+              onChange={handleChange}
+              className={`w-full px-4 py-2 rounded-lg border ${errors.editorial_id ? "border-red-500" : "border-[#79b2e9]"} focus:outline-none focus:ring-2 focus:ring-[#79b2e9] bg-white text-black`}
+              required
+            >
+              <option value="">Selecciona una editorial</option>
+              {editorials.map(ed => (
+                <option key={ed.editorial_id || ed.id} value={ed.name}>
+                  {ed.name}
+                </option>
+              ))}
+            </select>
+            {errors.editorial_id && <p className="mt-1 text-sm text-red-500">{errors.editorial_id}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

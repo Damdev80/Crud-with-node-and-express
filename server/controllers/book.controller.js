@@ -1,6 +1,7 @@
 import Book from '../models/book.model.js';
 import Author from '../models/author.model.js';
 import Category from '../models/category.model.js';
+import Editorial from '../models/editorial.model.js';
 
 // Obtener todos los libros (con detalles)
 export const getAllBooks = async (req, res) => {
@@ -29,12 +30,18 @@ export const getBookById = async (req, res) => {
     if (book.category_id) {
       category = await Category.getById(book.category_id);
     }
+    // Obtener detalles de editorial
+    let editorial = null;
+    if (book.editorial_id) {
+      editorial = await Editorial.getById(book.editorial_id);
+    }
 
     // Estructura enriquecida
     const bookWithDetails = {
       ...book,
       author: author ? { name: `${author.first_name}${author.last_name ? ' ' + author.last_name : ''}` } : null,
       category: category ? { name: category.name } : null,
+      editorial: editorial ? { name: editorial.name } : null,
     };
 
     res.json({ success: true, data: bookWithDetails });
@@ -47,12 +54,13 @@ export const getBookById = async (req, res) => {
 export const createBook = async (req, res) => {
   try {
     // Recibe nombres en vez de IDs
-    const { title, description, publication_date, author_name, category_name, publication_year, isbn, available_copies } = req.body;
+    const { title, description, publication_date, author_name, category_name, editorial_name, publication_year, isbn, available_copies } = req.body;
     const coverImagePath = req.file ? req.file.filename : null;
 
-    // Buscar o crear autor y categoría
+    // Buscar o crear autor, categoría y editorial
     const author = await Author.findOrCreateByName(author_name);
     const category = await Category.findOrCreateByName(category_name);
+    const editorial = editorial_name ? await Editorial.findOrCreateByName(editorial_name) : null;
 
     // Crear el libro con los IDs obtenidos
     const newBook = await Book.create({
@@ -64,6 +72,7 @@ export const createBook = async (req, res) => {
       available_copies,
       author_id: author.author_id,
       category_id: category.category_id,
+      editorial_id: editorial ? editorial.editorial_id : null,
       cover_image: coverImagePath,
     });
 
