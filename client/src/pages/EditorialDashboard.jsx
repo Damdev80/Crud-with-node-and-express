@@ -145,7 +145,8 @@ export default function EditorialDashboard() {
           onClick={() => window.history.back()}
           style={{ background: "#e3f0fb", color: "#2366a8", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 600, cursor: "pointer", marginBottom: 24, display: "flex", alignItems: "center", gap: 6 }}
         >
-          <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>←</span> Volver
+          <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}
+          className="flex justify-center items-center">←</span> Volver
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
@@ -155,6 +156,7 @@ export default function EditorialDashboard() {
             <p style={{ color: "#5a7ca8", marginTop: 8 }}>Gestiona las editoriales de tu biblioteca</p>
           </div>
           <button
+          className="flex justify-center items-center"
             onClick={() => {
               setShowForm(true)
               setEditEditorial(null)
@@ -166,19 +168,23 @@ export default function EditorialDashboard() {
           </button>
         </div>
         <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-          <div style={{ flex: 1, position: "relative" }}>
-            <Search style={{ position: "absolute", left: 12, top: 18, color: "#b6d4f5", width: 18, height: 18 }} />
+          <div style={{ flex: 1, position: "relative" }}
+          className="flex justify-center items"
+          >
+            <Search style={{ position: "absolute", left: 10, top: 10, color: "#b6d4f5", width: 18, height: 18 }} />
             <input
               placeholder="Buscar editoriales..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{ paddingLeft: 36, border: "1px solid #b6d4f5", borderRadius: 8, height: 40, width: "100%", background: "#f7fbff" }}
+              
             />
           </div>
           <button
             onClick={toggleSort}
             title={`Ordenar ${sortOrder === "asc" ? "descendente" : "ascendente"}`}
             style={{ border: "1px solid #b6d4f5", background: "#fff", borderRadius: 8, width: 40, height: 40, cursor: "pointer" }}
+            className="flex justify-center items-center"
           >
             <ArrowUpDown style={{ width: 18, height: 18, color: "#2366a8" }} />
           </button>

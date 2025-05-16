@@ -19,7 +19,6 @@ import {
 import {Footer} from "../components/Footer"
 import { getCategories, getAuthors } from '../services/filterService';
 import { getLoans } from '../services/loanService';
-import CategoryDashboard from "./CategoryDashboard";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
@@ -78,7 +77,7 @@ const Dashboard = () => {
   // Actualizar autores y préstamos cada vez que se agregue/borre un libro o autor
   useEffect(() => {
     // Obtener categorías
-    getCategories().then(setCategories).catch(() => setCategories([]));
+    getCategories().then(setCategories).catch(() => setCategories([])); 
     // Obtener autores y actualizar stats
     const updateAuthors = async () => {
       try {
