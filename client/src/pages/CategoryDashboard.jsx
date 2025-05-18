@@ -83,7 +83,14 @@ export default function CategoryDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#79b2e9] py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+      <button
+          onClick={() => window.history.back()}
+          style={{ background: "#2366a8", color: "#e3f0fb", border: "none", borderRadius: 8, padding: "8px 18px", fontWeight: 600, cursor: "pointer", marginBottom: 24, display: "flex", alignItems: "center", gap: 6 }}
+        >
+          <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}
+          className="flex justify-center items-center">←</span> Volver
+        </button>
+      <div className="max-w-4/5 mx-auto bg-white/90 p-10 rounded-lg ">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-[#2366a8] flex items-center">
             <FaBook className="mr-2" /> Categorías
