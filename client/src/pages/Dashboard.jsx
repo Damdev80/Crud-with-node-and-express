@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import {
   FaBook,
   FaSearch,
-  FaFilter,
   FaThLarge,
   FaList,
   FaPlus,
