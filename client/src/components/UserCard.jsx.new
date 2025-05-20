@@ -1,0 +1,162 @@
+// Componente para mostrar un usuario en formato de tarjeta
+import { useState } from 'react';
+import { FaUser, FaEnvelope, FaTrash, FaUserCog, FaUserTie, FaUserCheck, FaStar, FaIdCard, FaCrown } from 'react-icons/fa';
+
+const UserCard = ({ user, onChangeRole, onDelete }) => {
+  const [showOptions, setShowOptions] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(user.role);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Función para obtener el estilo de la tarjeta según el rol
+  const getCardStyle = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'border-purple-400 shadow-purple-100';
+      case 'librarian':
+        return 'border-blue-400 shadow-blue-100';
+      default:
+        return 'border-gray-300 shadow-gray-100';
+    }
+  };
+
+  // Función para obtener el ícono según el rol
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'admin':
+        return <FaCrown className="text-purple-600" />;
+      case 'librarian':
+        return <FaUserTie className="text-blue-600" />;
+      default:
+        return <FaUserCheck className="text-gray-600" />;
+    }
+  };
+
+  // Función para obtener el nombre del rol
+  const getRoleName = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'Administrador';
+      case 'librarian':
+        return 'Bibliotecario';
+      default:
+        return 'Usuario';
+    }
+  };
+  
+  // Función para obtener el color de fondo según el rol
+  const getRoleBgColor = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-gradient-to-r from-purple-600 to-purple-800';
+      case 'librarian':
+        return 'bg-gradient-to-r from-blue-600 to-blue-800';
+      default:
+        return 'bg-gradient-to-r from-gray-600 to-gray-800';
+    }
+  };
+
+  // Función para cambiar el rol
+  const handleRoleChange = (e) => {
+    const newRole = e.target.value;
+    setSelectedRole(newRole);
+    onChangeRole(user.user_id, newRole);
+  };
+
+  return (
+    <div 
+      className={`bg-white rounded-xl overflow-hidden border-2 ${getCardStyle(user.role)} shadow-lg transition-all duration-300 relative group transform ${isHovered ? 'scale-105' : 'scale-100'}`}
+      onMouseEnter={() => {
+        setShowOptions(true);
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setShowOptions(false);
+        setIsHovered(false);
+      }}
+    >
+      {/* Decorative corner accent */}
+      <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
+        <div className={`${getRoleBgColor(user.role)} rotate-45 transform origin-bottom-left w-16 h-16 absolute -top-8 -right-8 opacity-70`}></div>
+      </div>
+      
+      {/* Cabecera de la tarjeta con gradiente de color según el rol */}
+      <div className={`${getRoleBgColor(user.role)} text-white p-5 relative`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-white/20 p-2.5 rounded-full backdrop-blur-sm relative overflow-hidden shadow-inner">
+              <FaUser className="text-white text-xl relative z-10" />
+              <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse"></div>
+            </div>
+            <div>
+              <h3 className="font-bold truncate max-w-[150px] text-lg">{user.name}</h3>
+              <div className="flex items-center text-xs text-white/90 bg-black/20 rounded-full px-2 py-0.5 mt-1 backdrop-blur-sm">
+                <FaEnvelope className="mr-1" />
+                <span className="truncate max-w-[140px]">{user.email}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm p-1.5 rounded-md border border-white/20">
+            {getRoleIcon(user.role)}
+            <span className="text-xs font-medium block text-center mt-0.5">{getRoleName(user.role)}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Cuerpo de la tarjeta */}
+      <div className="p-5 relative">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+            <FaIdCard className="text-blue-600" />
+            <span className="text-sm text-blue-800 font-medium">ID: {user.user_id}</span>
+          </div>
+          {/* Badge that shows in upper right corner */}
+          {user.role === 'admin' && (
+            <div className="absolute top-2 right-2 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full flex items-center">
+              <FaStar className="mr-1 text-purple-600" />
+              Admin
+            </div>
+          )}
+        </div>
+        
+        {/* Selector de rol con estilo mejorado */}
+        <div className="mt-3">
+          <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center">
+            <FaUserCog className="mr-1 text-blue-600" />
+            Rol de usuario
+          </label>
+          <select
+            value={selectedRole}
+            onChange={handleRoleChange}
+            className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50"
+            style={{
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)"
+            }}
+          >
+            <option value="user">Usuario</option>
+            <option value="librarian">Bibliotecario</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+      
+      {/* Botones de acción con animación */}
+      <div className="p-4 pt-0">
+        <button
+          onClick={() => onDelete(user.user_id)}
+          className="w-full group-hover:bg-red-600 group-hover:text-white bg-red-50 text-red-600 hover:bg-red-100 p-2.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center"
+        >
+          <FaTrash className={`mr-2 ${isHovered ? 'animate-pulse' : ''}`} /> 
+          Eliminar usuario
+        </button>
+      </div>
+      
+      {/* Efecto de brillo al pasar el mouse */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out transform"></div>
+      
+      {/* Border overlay for hover effect */}
+      <div className="absolute inset-0 border-2 border-transparent rounded-xl transition-all duration-300 group-hover:border-blue-400/30"></div>
+    </div>
+  );
+};
+
+export default UserCard;

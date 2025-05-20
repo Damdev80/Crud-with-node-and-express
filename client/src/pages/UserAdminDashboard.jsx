@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaUserEdit, FaTrash, FaUserCog, FaUserPlus, FaFilter, FaSearch } from 'react-icons/fa';
+import { FaUser, FaUserEdit, FaTrash, FaUserCog, FaUserPlus, FaFilter, FaSearch, FaTimes, FaChevronLeft, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import CreateUserForm from '../components/CreateUserForm';
+import UserView from '../components/UserView';
 
 const UserAdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -77,97 +78,92 @@ const UserAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Eliminar usuario
+  };  // Eliminar usuario
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      return;
-    }
-
     try {
-      // En un sistema real, enviar solicitud de eliminación
-      // await fetch(`http://localhost:3000/api/users/${userId}`, {
-      //   method: 'DELETE',
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
+      if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+        console.log('Eliminando usuario con ID:', userId);
+        
+        // Hacer la solicitud al backend para eliminar el usuario
+        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            // En un entorno de producción, usar un token JWT
+            'x-user-id': user?.user_id,
+            'x-user-role': user?.role
+          }
+        });
 
-      // Para este ejemplo, simplemente filtrar del estado
-      setUsers(users.filter(u => u.user_id !== userId));
-      alert('Usuario eliminado correctamente');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al eliminar usuario');
+        }
+
+        // Si la eliminación fue exitosa, actualizar la UI
+        const updatedUsers = users.filter(u => u.user_id !== userId);
+        setUsers(updatedUsers);
+        setFilteredUsers(updatedUsers.filter(u => {
+          // Mantener los filtros actuales
+          const matchesSearch = !searchTerm || 
+            u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+          return matchesSearch && matchesRole;
+        }));
+        
+        console.log('Usuario eliminado correctamente');
+        alert('Usuario eliminado correctamente');
+      }
     } catch (err) {
-      console.error('Error deleting user:', err);
-      alert('Error al eliminar usuario');
+      console.error('Error al eliminar usuario:', err);
+      alert(`Error al eliminar usuario: ${err.message}`);
     }
-  };
-
-  // Cambiar rol de usuario
+  };  // Cambiar rol de usuario
   const handleChangeRole = async (userId, newRole) => {
     try {
-      // En un sistema real, actualizar rol con una llamada a la API
-      // await fetch(`http://localhost:3000/api/users/${userId}`, {
-      //   method: 'PATCH',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${token}` 
-      //   },
-      //   body: JSON.stringify({ role: newRole })
-      // });
+      console.log(`Cambiando rol para usuario ${userId} a ${newRole}`);
+        const userToUpdate = users.find(u => u.user_id === userId);
+      if (!userToUpdate) {
+        throw new Error('Usuario no encontrado');
+      }
 
-      // Para este ejemplo, actualizar en el estado local
-      setUsers(
-        users.map(u => 
-          u.user_id === userId ? { ...u, role: newRole } : u
-        )
+      // Hacer la solicitud al backend para actualizar el rol del usuario
+      const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          // En un entorno de producción, usar un token JWT
+          'x-user-id': user?.user_id,
+          'x-user-role': user?.role
+        },
+        body: JSON.stringify({ 
+          ...userToUpdate, 
+          role: newRole 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar rol');
+      }
+
+      // Si la actualización fue exitosa, actualizar la UI
+      const updatedUsers = users.map(u => 
+        u.user_id === userId ? { ...u, role: newRole } : u
       );
-      alert(`Rol actualizado a: ${newRole}`);
+      
+      setUsers(updatedUsers);
+      
+      // También actualizar los usuarios filtrados para que la UI se actualice inmediatamente
+      setFilteredUsers(prev => 
+        prev.map(u => u.user_id === userId ? { ...u, role: newRole } : u)
+      );
+      
+      console.log(`Rol actualizado a: ${newRole} para usuario ID: ${userId}`);
+      alert(`Rol actualizado correctamente a: ${getRoleName(newRole)}`);
     } catch (err) {
-      console.error('Error updating role:', err);
-      alert('Error al actualizar rol');
-    }
-  };
-
-  // Usuarios de ejemplo para desarrollo
-  const getSampleUsers = () => [
-    { user_id: 1, name: 'Admin Usuario', email: 'admin@biblioteca.com', role: 'admin' },
-    { user_id: 2, name: 'Bibliotecario Ejemplo', email: 'bibliotecario@biblioteca.com', role: 'librarian' },
-    { user_id: 3, name: 'Usuario Normal', email: 'usuario@ejemplo.com', role: 'user' },
-    { user_id: 4, name: 'Ana García', email: 'ana@ejemplo.com', role: 'user' },
-    { user_id: 5, name: 'Carlos López', email: 'carlos@biblioteca.com', role: 'librarian' }
-  ];
-
-  // Mostrar mensaje si no es administrador
-  if (!isAdmin()) {
-    return (
-      <div className="min-h-screen bg-[#f7fafc] flex flex-col items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="bg-red-100 text-red-700 p-3 rounded-full inline-flex mb-4">
-            <FaUserCog className="text-3xl" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h1>
-          <p className="text-gray-600 mb-6">
-            Esta página está disponible solo para administradores. No tienes permisos suficientes para acceder.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
-          >
-            Volver al Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Función para obtener el estilo de la insignia según el rol
-  const getRoleBadgeStyle = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'librarian':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      console.error('Error al actualizar rol:', err);
+      alert(`Error al actualizar rol: ${err.message}`);
     }
   };
 
@@ -182,26 +178,58 @@ const UserAdminDashboard = () => {
         return 'Usuario';
     }
   };
+  // Usuarios de ejemplo para desarrollo
+  const getSampleUsers = () => [
+    { user_id: 1, name: 'Admin Usuario', email: 'admin@biblioteca.com', role: 'admin' },
+    { user_id: 2, name: 'Bibliotecario Ejemplo', email: 'bibliotecario@biblioteca.com', role: 'librarian' },
+    { user_id: 3, name: 'Usuario Normal', email: 'usuario@ejemplo.com', role: 'user' },
+    { user_id: 4, name: 'Ana García', email: 'ana@ejemplo.com', role: 'user' },
+    { user_id: 5, name: 'Carlos López', email: 'carlos@biblioteca.com', role: 'librarian' }
+  ];
 
-  return (
-    <div className="min-h-screen bg-[#f7fafc] p-6">
+  // Mostrar mensaje si no es administrador
+  if (!isAdmin()) {
+    return (
+      <div className="min-h-screen bg-[#f7fafc] flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center border border-red-100">
+          <div className="bg-gradient-to-r from-red-500 to-red-700 text-white p-3 rounded-full inline-flex mb-4">
+            <FaUserCog className="text-3xl" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h1>
+          <p className="text-gray-600 mb-6">
+            Esta página está disponible solo para administradores. No tienes permisos suficientes para acceder.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center justify-center mx-auto shadow-md"
+          >
+            <FaChevronLeft className="mr-2" /> Volver al Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }  return (
+    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-6 transition-all">
       <div className="max-w-6xl mx-auto">
-        {/* Encabezado */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        {/* Encabezado mejorado con animaciones */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 animate-fadeIn">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-              <FaUserCog className="mr-2 text-blue-600" /> Administración de Usuarios
+            <h1 className="text-2xl md:text-3xl font-bold text-[#2366a8] flex items-center">
+              <FaUserCog className="mr-2 text-[#2366a8]" /> 
+              Administración de Usuarios
             </h1>
-            <p className="text-gray-600 mt-1">Gestiona los usuarios y sus permisos en el sistema</p>
+            <p className="text-gray-600 mt-1">
+              Gestiona usuarios y sus permisos de acceso en el sistema
+            </p>
           </div>
           <div className="mt-4 md:mt-0">
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
+              className={`bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-medium py-2.5 px-4 rounded-lg transition-all flex items-center shadow-md hover:shadow-lg ${showCreateForm ? 'bg-red-600' : ''}`}
             >
               {showCreateForm ? (
                 <>
-                  <FaFilter className="mr-2" /> Ver Usuarios
+                  <FaArrowLeft className="mr-2" /> Volver a Usuarios
                 </>
               ) : (
                 <>
@@ -212,144 +240,93 @@ const UserAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Formulario de creación de usuario */}
+        {/* Formulario de creación de usuario con animación */}
         {showCreateForm ? (
-          <div className="mb-8">
-            <CreateUserForm />
+          <div className="mb-8 animate-scaleIn">
+            <CreateUserForm onSuccess={() => {
+              setShowCreateForm(false);
+              fetchUsers();
+            }} />
           </div>
         ) : (
-          <>
-            {/* Filtros */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div className="animate-fadeIn">
+            {/* Filtros mejorados con mejor UI */}
+            <div className="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6 md:mb-8 border border-blue-50 transition-all">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
-                  <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaSearch className="text-gray-400" />
+                  </div>
                   <input
                     type="text"
-                    placeholder="Buscar usuarios..."
+                    placeholder="Buscar por nombre o email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
                 </div>
                 <div>
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full md:w-40 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Todos los roles</option>
-                    <option value="user">Usuarios</option>
-                    <option value="librarian">Bibliotecarios</option>
-                    <option value="admin">Administradores</option>
-                  </select>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaFilter className="text-gray-400" />
+                    </div>
+                    <select
+                      value={roleFilter}
+                      onChange={(e) => setRoleFilter(e.target.value)}
+                      className="w-full md:w-48 pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    >
+                      <option value="all">Todos los roles</option>
+                      <option value="user">Usuarios</option>
+                      <option value="librarian">Bibliotecarios</option>
+                      <option value="admin">Administradores</option>
+                    </select>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
                     setSearchTerm('');
                     setRoleFilter('all');
                   }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                  className={`bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center ${(!searchTerm && roleFilter === 'all') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={!searchTerm && roleFilter === 'all'}
                 >
-                  Limpiar filtros
+                  <FaTimes className="mr-2" /> Limpiar filtros
                 </button>
               </div>
-            </div>
-
-            {/* Listado de usuarios */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              {loading ? (
-                <div className="p-8 text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                  <p className="text-gray-600">Cargando usuarios...</p>
-                </div>
-              ) : error ? (
-                <div className="p-8 text-center">
-                  <div className="bg-red-100 text-red-700 p-4 rounded-lg inline-block">
-                    {error}
-                  </div>
-                </div>
-              ) : filteredUsers.length === 0 ? (
-                <div className="p-8 text-center">
-                  <FaUser className="mx-auto text-gray-400 text-4xl mb-4" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-1">No se encontraron usuarios</h3>
-                  <p className="text-gray-500">
-                    {searchTerm || roleFilter !== 'all'
-                      ? 'Prueba con diferentes criterios de búsqueda'
-                      : 'No hay usuarios registrados en el sistema'}
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Usuario
-                        </th>
-                        <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                        <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Rol
-                        </th>
-                        <th className="py-3 px-6 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredUsers.map((user) => (
-                        <tr key={user.user_id} className="hover:bg-gray-50">
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="bg-blue-100 text-blue-700 p-2 rounded-full mr-3">
-                                <FaUser />
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{user.name}</div>
-                                <div className="text-xs text-gray-500">ID: {user.user_id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6 whitespace-nowrap text-gray-700">{user.email}</td>
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeStyle(
-                                user.role
-                              )}`}
-                            >
-                              {getRoleName(user.role)}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <div className="flex justify-end gap-2">
-                              <select
-                                value={user.role}
-                                onChange={(e) => handleChangeRole(user.user_id, e.target.value)}
-                                className="text-xs border border-gray-300 rounded p-1 bg-white"
-                              >
-                                <option value="user">Usuario</option>
-                                <option value="librarian">Bibliotecario</option>
-                                <option value="admin">Administrador</option>
-                              </select>
-                              <button
-                                onClick={() => handleDeleteUser(user.user_id)}
-                                className="text-red-600 hover:text-red-800 p-1"
-                                title="Eliminar usuario"
-                              >
-                                <FaTrash />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              
+              {/* Contador de resultados */}
+              {filteredUsers.length > 0 && (
+                <div className="mt-4 text-sm text-gray-500">
+                  Mostrando {filteredUsers.length} de {users.length} usuarios
+                  {searchTerm && <span> que coinciden con "{searchTerm}"</span>}
+                  {roleFilter !== 'all' && <span> con rol: {getRoleName(roleFilter)}</span>}
                 </div>
               )}
             </div>
-          </>
+
+            {/* Componente de vista de usuarios con contenedor optimizado */}
+            <div className="max-w-full overflow-hidden bg-gray-50 rounded-xl shadow-sm border border-gray-100">
+              <UserView 
+                users={filteredUsers}
+                loading={loading}
+                error={error}
+                onChangeRole={handleChangeRole}
+                onDeleteUser={handleDeleteUser}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                roleFilter={roleFilter}
+                setRoleFilter={setRoleFilter}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

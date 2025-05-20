@@ -1,7 +1,7 @@
 // Componente para crear usuarios con selección de rol (solo para administradores)
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaUser, FaUsersCog, FaEnvelope, FaLock, FaUserPlus, FaArrowLeft, FaShieldAlt, FaCheck, FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaUsersCog, FaEnvelope, FaLock, FaUserPlus, FaArrowLeft, FaShieldAlt, FaCheck, FaTimes } from 'react-icons/fa';
 import RoleSelector from './RoleSelector';
 
 const CreateUserForm = ({ onSuccess }) => {
