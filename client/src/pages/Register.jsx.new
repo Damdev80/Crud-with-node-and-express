@@ -22,10 +22,7 @@ export default function Register() {
     match: false,
   })
   const navigate = useNavigate()
-  const { register, isAdmin } = useAuth()
-
-  // Obtener el estado de administrador al inicio
-  const isUserAdmin = isAdmin()
+  const { register } = useAuth()
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -363,7 +360,7 @@ export default function Register() {
           )}
 
           {/* Selector de rol - Solo visible para administradores */}
-          {isUserAdmin && (
+          {useAuth().isAdmin() && (
             <div className="mt-4">
               <RoleSelector 
                 selectedRole={form.role} 

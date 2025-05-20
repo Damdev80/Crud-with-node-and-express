@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { FaSignInAlt, FaEye, FaEyeSlash, FaEnvelope, FaLock, FaBook } from "react-icons/fa"
+import { useAuth } from "../context/AuthContext"
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" })
@@ -10,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -22,20 +24,18 @@ export default function Login() {
     }
     try {
       setLoading(true)
-      const res = await fetch("http://localhost:3000/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        setError(data.message || "Error al iniciar sesión. Verifica tus credenciales.")
-        return
+      // Usar el método login del contexto de autenticación
+      const user = await login(form.email, form.password)
+
+      // Redirigir según el rol
+      if (user.role === "admin" || user.role === "librarian") {
+        navigate("/dashboard")
+      } else {
+        navigate("/dashboard") // Los usuarios regulares también van al dashboard
       }
-      // Aquí podrías guardar el usuario en localStorage/sessionStorage si quieres sesión persistente
-      navigate("/dashboard")
-    } catch {
-      setError("Error de conexión con el servidor")
+    } catch (err) {
+      console.error("Error de inicio de sesión:", err)
+      setError(err.message || "Credenciales inválidas")
     } finally {
       setLoading(false)
     }

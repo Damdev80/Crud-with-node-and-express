@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import {
   FaBook,
   FaSearch,
+  FaFilter,
   FaThLarge,
   FaList,
   FaPlus,
@@ -14,14 +15,18 @@ import {
   FaBookOpen,
   FaCalendarAlt,
   FaUserFriends,
+  FaUserCog,
+  FaSignOutAlt
 } from "react-icons/fa"
 import {Footer} from "../components/Footer"
 import { getCategories, getAuthors } from '../services/filterService';
 import { getLoans } from '../services/loanService';
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, logout, isAdmin, isLibrarianOrAdmin } = useAuth();
   const [books, setBooks] = useState([])
   const [filteredBooks, setFilteredBooks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -407,8 +412,7 @@ const Dashboard = () => {
   }];
 
   return (
-    <div ref={containerRef} className={`min-h-screen bg-[#f7fafc] transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Cabecera */}
+    <div ref={containerRef} className={`min-h-screen bg-[#f7fafc] transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>      {/* Cabecera */}
       <header className="bg-[#79b2e9] text-white shadow-lg">
         <div className="container mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-3">
@@ -417,14 +421,38 @@ const Dashboard = () => {
               Mi Biblioteca
             </h1>
           </div>
-          
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+            {/* Solo mostrar botón de añadir libro si es bibliotecario o admin */}
+            {isLibrarianOrAdmin && (
+              <button
+                onClick={handleAddBookTransition}
+                className="flex items-center bg-[#79b2e9] hover:bg-[#2366a8] text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <FaPlus className="mr-2" />
+                Añadir Libro
+              </button>
+            )}
+            
+            {/* Mostrar enlace a administración de usuarios solo para admins */}
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="flex items-center bg-[#2366a8] hover:bg-[#1d5a9a] text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <FaUserCog className="mr-2" />
+                Admin Usuarios
+              </button>
+            )}
+              {/* Botón de cerrar sesión */}
             <button
-              onClick={handleAddBookTransition}
-              className="flex items-center bg-[#79b2e9] hover:bg-[#2366a8] text-white px-4 py-2 rounded-lg transition-colors"
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="flex items-center bg-white text-[#2366a8] border border-[#2366a8] hover:bg-[#e3f0fb] px-4 py-2 rounded-lg transition-colors"
             >
-              <FaPlus className="mr-2" />
-              Añadir Libro
+              <FaSignOutAlt className="mr-2" />
+              Salir
             </button>
           </div>
         </div>

@@ -9,21 +9,89 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CategoryDashboard from './pages/CategoryDashboard';
 import EditorialDashboard from './pages/EditorialDashboard';
+import UserAdminDashboard from './pages/UserAdminDashboard';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/add" element={<AddBook />} />
-      <Route path="/edit/:id" element={<EditBook />} />
-      <Route path="/author-dashboard" element={<AuthorDashboard />} />
-      <Route path="/loan-dashboard" element={<LoanDashboard />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/category-dashboard" element={<CategoryDashboard />} />
-      <Route path="/editorial-dashboard" element={<EditorialDashboard />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* Dashboard principal (accesible para todos los usuarios) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Rutas para bibliotecarios y admins */}
+        <Route 
+          path="/add" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <AddBook />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/edit/:id" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <EditBook />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/author-dashboard" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <AuthorDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/loan-dashboard" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <LoanDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/category-dashboard" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <CategoryDashboard />
+            </ProtectedRoute>
+          } 
+        />        <Route 
+          path="/editorial-dashboard" 
+          element={
+            <ProtectedRoute roles={['librarian', 'admin']}>
+              <EditorialDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Ruta de administración de usuarios (solo para administradores) */}
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <UserAdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 

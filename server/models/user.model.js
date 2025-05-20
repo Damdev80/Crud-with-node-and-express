@@ -7,6 +7,7 @@ class User {
     this.name = user.name;
     this.email = user.email;
     this.password = user.password;
+    this.role = user.role || 'user'; // Valores posibles: 'user', 'librarian', 'admin'
   }
 
   // Obtener todos los usuarios
@@ -29,34 +30,34 @@ class User {
       throw error;
     }
   }
-
   // Crear un nuevo usuario
   static async create(newUser) {
     try {
       const [result] = await pool.query(
-        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-        [newUser.name, newUser.email, newUser.password]
+        'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        [newUser.name, newUser.email, newUser.password, newUser.role || 'user']
       );
       return new User({
         user_id: result.insertId,
-        ...newUser
+        ...newUser,
+        role: newUser.role || 'user'
       });
     } catch (error) {
       throw error;
     }
   }
-
   // Actualizar un usuario existente
   static async update(id, userData) {
     try {
       const [result] = await pool.query(
-        'UPDATE users SET name = ?, email = ?, password = ? WHERE user_id = ?',
-        [userData.name, userData.email, userData.password, id]
+        'UPDATE users SET name = ?, email = ?, password = ?, role = ? WHERE user_id = ?',
+        [userData.name, userData.email, userData.password, userData.role || 'user', id]
       );
       if (result.affectedRows === 0) return null;
       return new User({
         user_id: id,
-        ...userData
+        ...userData,
+        role: userData.role || 'user'
       });
     } catch (error) {
       throw error;

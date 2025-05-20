@@ -6,10 +6,14 @@ import categoryRoutes from './routes/category.routes.js';
 import loanRoutes from './routes/loan.routes.js';
 import userRoutes from './routes/user.routes.js';
 import editorialRoutes from './routes/editorial.routes.js';
+import { processUser } from './middlewares/auth.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Aplicar middleware para extraer el usuario de la petición
+app.use(processUser);
 
 const PORT = process.env.PORT ?? 3000;
 

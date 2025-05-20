@@ -67,7 +67,7 @@ export const getUserLoans = async (req, res) => {
 // Registro de usuario seguro
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Faltan campos obligatorios' });
     }
@@ -78,7 +78,21 @@ export const registerUser = async (req, res) => {
     }
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ name, email, password: hashedPassword });
+    
+    // Por defecto, asignar rol 'user' a menos que se especifique otro
+    // Solo permitir roles válidos
+    let validRole = role;
+    if (!['user', 'librarian', 'admin'].includes(role)) {
+      validRole = 'user'; // Si no es un rol válido, asignar 'user'
+    }
+    
+    const newUser = await User.create({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      role: validRole 
+    });
+    
     // No exponer password
     delete newUser.password;
     res.status(201).json({ success: true, data: newUser });
@@ -105,7 +119,20 @@ export const loginUser = async (req, res) => {
     }
     // No exponer password
     delete user.password;
-    res.json({ success: true, data: user });
+    
+    // Generar token (en un sistema real usarías JWT)
+    // Por ahora, simplemente retornamos la info del usuario con su rol
+    res.json({ 
+      success: true, 
+      data: {
+        ...user,
+        // Garantizamos que el rol exista y sea válido
+        role: user.role && ['user', 'librarian', 'admin'].includes(user.role) 
+          ? user.role 
+          : 'user'
+      },
+      // Si fuera JWT: token: generatedToken
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al iniciar sesión', error: error.message });
   }
