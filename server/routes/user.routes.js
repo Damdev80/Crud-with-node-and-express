@@ -9,8 +9,8 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// Listar todos los usuarios - solo admin
-router.get('/', isAdmin, async (req, res) => {
+// Listar todos los usuarios - admin y bibliotecarios
+router.get('/', isLibrarianOrAdmin, async (req, res) => {
   try {
     const users = await User.getAll();
     res.json({ success: true, data: users });

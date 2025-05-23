@@ -22,8 +22,12 @@ import {
   FaTimes,
   FaCheck,
 } from "react-icons/fa"
+import { useAuth } from "../context/AuthContext"
+import { Navigate } from "react-router-dom"
 
 export default function LoanDashboard() {
+  const { isLibrarianOrAdmin } = useAuth();
+  
   // Estados principales
   const [loans, setLoans] = useState([])
   const [filteredLoans, setFilteredLoans] = useState([])
@@ -35,6 +39,11 @@ export default function LoanDashboard() {
   const [users, setUsers] = useState([])
   const [notification, setNotification] = useState({ show: false, type: "", message: "" })
   const [confirmDelete, setConfirmDelete] = useState(null)
+  
+  // Redireccionar si no es bibliotecario o admin
+  if (!isLibrarianOrAdmin()) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Estados para filtros y ordenación
   const [searchTerm, setSearchTerm] = useState("")
@@ -85,29 +94,76 @@ export default function LoanDashboard() {
       setBooks([])
       return []
     }
-  }
-
-  // Función para obtener usuarios
+  }  // Función para obtener usuarios
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/users")
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
-      const data = await res.json()
-      setUsers(data.data || [])
-      return data.data || []
+      // Obtener el usuario actual del localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      if (!currentUser || !currentUser.user_id) {
+        console.error("Usuario no autenticado");
+        setNotification({
+          show: true,
+          type: "error",
+          message: "Debe iniciar sesión para ver la lista de usuarios"
+        });
+        return [];
+      }
+      
+      const res = await fetch("http://localhost:3000/api/users", {
+        headers: {
+          'Content-Type': 'application/json',
+          // Incluir las credenciales de autenticación
+          'x-user-id': currentUser.user_id,
+          'x-user-role': currentUser.role
+        }
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+      }
+      
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setUsers(data.data);
+        console.log("Usuarios cargados:", data.data.length);
+        return data.data;
+      } else {
+        console.warn("Formato de respuesta inesperado:", data);
+        setUsers([]);
+        return [];
+      }
     } catch (err) {
-      console.error("Error fetching users:", err)
-      setUsers([])
-      return []
+      console.error("Error fetching users:", err);
+      setNotification({
+        show: true,
+        type: "error",
+        message: `Error al cargar usuarios: ${err.message}`
+      });
+      setUsers([]);
+      return [];
     }
   }
-
   // Función para obtener préstamos (ahora recibe books/users)
   const fetchLoans = async (booksArg = books, usersArg = users) => {
     setIsLoading(true)
     setError(null)
+    
+    // Verificación de depuración
+    console.log("Libros disponibles:", booksArg.length)
+    console.log("Usuarios disponibles:", usersArg.length)
+    
     try {
-      const res = await fetch("http://localhost:3000/api/loans")
+      // Obtener el usuario actual del localStorage para autenticación
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      const res = await fetch("http://localhost:3000/api/loans", {
+        headers: {
+          'x-user-id': currentUser.user_id,
+          'x-user-role': currentUser.role
+        }
+      })
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data = await res.json()
       const loansArray = Array.isArray(data) ? data : data.data
@@ -230,7 +286,6 @@ export default function LoanDashboard() {
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
-
   // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -239,23 +294,46 @@ export default function LoanDashboard() {
 
     setIsLoading(true)
     try {
+      // Obtener el usuario actual del localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      if (!currentUser || !currentUser.user_id) {
+        throw new Error('Debe iniciar sesión para gestionar préstamos');
+      }
+      
       if (editLoan) {
         const res = await fetch(`http://localhost:3000/api/loans/${editLoan.loan_id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            // Incluir las credenciales de autenticación
+            'x-user-id': currentUser.user_id,
+            'x-user-role': currentUser.role
+          },
           body: JSON.stringify(form),
         })
 
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+        }
         showNotification("success", "Préstamo actualizado correctamente")
       } else {
         const res = await fetch("http://localhost:3000/api/loans", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            // Incluir las credenciales de autenticación
+            'x-user-id': currentUser.user_id,
+            'x-user-role': currentUser.role
+          },
           body: JSON.stringify(form),
         })
 
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+        }
         showNotification("success", "Préstamo registrado correctamente")
       }
 
@@ -306,15 +384,32 @@ export default function LoanDashboard() {
   const handleDeleteConfirm = (loan) => {
     setConfirmDelete(loan)
   }
-
   // Eliminar préstamo
   const handleDelete = async () => {
     if (!confirmDelete) return
 
     setIsLoading(true)
     try {
-      const res = await fetch(`http://localhost:3000/api/loans/${confirmDelete.loan_id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+      // Obtener el usuario actual del localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      if (!currentUser || !currentUser.user_id) {
+        throw new Error('Debe iniciar sesión para eliminar un préstamo');
+      }
+      
+      const res = await fetch(`http://localhost:3000/api/loans/${confirmDelete.loan_id}`, { 
+        method: "DELETE",
+        headers: {
+          // Incluir las credenciales de autenticación
+          'x-user-id': currentUser.user_id,
+          'x-user-role': currentUser.role
+        }
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+      }
 
       showNotification("success", "Préstamo eliminado correctamente")
       const booksData = await fetchBooks()
@@ -328,18 +423,32 @@ export default function LoanDashboard() {
       setConfirmDelete(null)
     }
   }
-
   // Marcar préstamo como devuelto
   const handleMarkAsReturned = async (loan) => {
     setIsLoading(true)
     try {
+      // Obtener el usuario actual del localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      if (!currentUser || !currentUser.user_id) {
+        throw new Error('Debe iniciar sesión para devolver un libro');
+      }
+      
       const res = await fetch(`http://localhost:3000/api/loans/${loan.loan_id}/return`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // Incluir las credenciales de autenticación
+          'x-user-id': currentUser.user_id,
+          'x-user-role': currentUser.role
+        },
         body: JSON.stringify({ actual_return_date: new Date().toISOString().split("T")[0] }),
       })
 
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+      }
       showNotification("success", "Libro marcado como devuelto correctamente")
       const booksData = await fetchBooks()
       const usersData = await fetchUsers()
@@ -646,8 +755,7 @@ export default function LoanDashboard() {
               <div>
                 <label className="block text-gray-700 font-medium mb-2" htmlFor="user_id">
                   Usuario <span className="text-red-500">*</span>
-                </label>
-                <select
+                </label>                <select
                   id="user_id"
                   name="user_id"
                   value={form.user_id}
@@ -664,6 +772,12 @@ export default function LoanDashboard() {
                   ))}
                 </select>
                 {formErrors.user_id && <p className="text-red-500 text-sm mt-1">{formErrors.user_id}</p>}
+                {users.length === 0 && (
+                  <p className="text-amber-500 text-sm mt-1">
+                    <FaInfoCircle className="inline mr-1" />
+                    No se pudieron cargar los usuarios. Verifica que tienes permisos de administrador o bibliotecario.
+                  </p>
+                )}
               </div>
 
               <div>

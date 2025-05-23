@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { BookOpen, Plus, Pencil, Trash2, Save, Search, AlertCircle, ArrowUpDown } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 const API_URL = "http://localhost:3000/api/editorials"
 
 export default function EditorialDashboard() {
+  const { isLibrarianOrAdmin } = useAuth();
   const [editorials, setEditorials] = useState([])
   const [filteredEditorials, setFilteredEditorials] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -154,18 +156,19 @@ export default function EditorialDashboard() {
               <BookOpen style={{ width: 40, height: 40 }} /> Editoriales
             </h1>
             <p style={{ color: "#5a7ca8", marginTop: 8 }}>Gestiona las editoriales de tu biblioteca</p>
-          </div>
-          <button
-          className="flex justify-center items-center"
-            onClick={() => {
-              setShowForm(true)
-              setEditEditorial(null)
-              setForm({ name: "", description: "" })
-            }}
-            style={{ background: "#2366a8", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer" }}
-          >
-            <Plus style={{ marginRight: 8, width: 20, height: 20, verticalAlign: "middle" }} /> Nueva Editorial
-          </button>
+          </div>          {isLibrarianOrAdmin() && (
+            <button
+            className="flex justify-center items-center"
+              onClick={() => {
+                setShowForm(true)
+                setEditEditorial(null)
+                setForm({ name: "", description: "" })
+              }}
+              style={{ background: "#2366a8", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer" }}
+            >
+              <Plus style={{ marginRight: 8, width: 20, height: 20, verticalAlign: "middle" }} /> Nueva Editorial
+            </button>
+          )}
         </div>
         <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
           <div style={{ flex: 1, position: "relative" }}
@@ -220,20 +223,23 @@ export default function EditorialDashboard() {
                   </div>
                   <div style={{ color: "#5a7ca8", fontSize: 13, marginTop: 4 }}>Creada: {ed.created_at}</div>
                   <div style={{ color: "#444", fontSize: 15, marginTop: 8 }}>{ed.description || "Sin descripción"}</div>
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-                  <button
-                    onClick={() => handleEdit(ed)}
-                    style={{ border: "1px solid #b6d4f5", color: "#2366a8", background: "#e3f0fb", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
-                  >
-                    <Pencil style={{ width: 16, height: 16, marginRight: 6 }} /> Editar
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(ed.editorial_id)}
-                    style={{ border: "1px solid #fca5a5", color: "#b91c1c", background: "#fff0f0", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
-                  >
-                    <Trash2 style={{ width: 16, height: 16, marginRight: 6 }} /> Eliminar
-                  </button>
+                </div>                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+                  {isLibrarianOrAdmin() && (
+                    <>
+                      <button
+                        onClick={() => handleEdit(ed)}
+                        style={{ border: "1px solid #b6d4f5", color: "#2366a8", background: "#e3f0fb", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
+                      >
+                        <Pencil style={{ width: 16, height: 16, marginRight: 6 }} /> Editar
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(ed.editorial_id)}
+                        style={{ border: "1px solid #fca5a5", color: "#b91c1c", background: "#fff0f0", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
+                      >
+                        <Trash2 style={{ width: 16, height: 16, marginRight: 6 }} /> Eliminar
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

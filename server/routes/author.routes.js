@@ -1,5 +1,6 @@
 import express from 'express';
 import Author from '../models/author.model.js';
+import { isAuthenticated, isLibrarianOrAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -24,8 +25,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Crear nuevo autor
-router.post('/', async (req, res) => {
+// Crear nuevo autor - solo bibliotecarios y admins
+router.post('/', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const newAuthor = await Author.create(req.body);
     res.status(201).json(newAuthor);
@@ -34,8 +35,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar autor
-router.put('/:id', async (req, res) => {
+// Actualizar autor - solo bibliotecarios y admins
+router.put('/:id', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const updated = await Author.update(req.params.id, req.body);
     res.json(updated);
@@ -44,8 +45,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar autor
-router.delete('/:id', async (req, res) => {
+// Eliminar autor - solo bibliotecarios y admins
+router.delete('/:id', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const deleted = await Author.delete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Autor no encontrado' });

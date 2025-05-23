@@ -19,8 +19,10 @@ import {
   FaSpinner,
 } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "../context/AuthContext"
 
 export default function AuthorDashboard() {
+  const { isLibrarianOrAdmin } = useAuth();
   const [authors, setAuthors] = useState([])
   const [filteredAuthors, setFilteredAuthors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -44,15 +46,15 @@ export default function AuthorDashboard() {
 
   // Simular conteo de libros para cada autor
   const getRandomBookCount = () => Math.floor(Math.random() * 15) + 1
-
   useEffect(() => {
     fetchAuthors()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
   useEffect(() => {
     if (authors.length > 0) {
       filterAndSortAuthors()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authors, searchTerm, sortConfig])
 
   const fetchAuthors = async () => {
@@ -336,17 +338,19 @@ export default function AuthorDashboard() {
               Administra los autores de tu biblioteca. Añade, edita o elimina según sea necesario.
             </p>
           </div>
-          <button
-            className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] hover:from-[#1d5a9a] hover:to-[#5a9de0] text-white px-5 py-3 rounded-lg shadow-md transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
-            type="button"
-            onClick={() => {
-              setShowForm(true)
-              setEditAuthor(null)
-              resetForm()
-            }}
-          >
-            <FaPlus className="mr-2" /> Nuevo Autor
-          </button>
+          {isLibrarianOrAdmin() && (
+            <button
+              className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] hover:from-[#1d5a9a] hover:to-[#5a9de0] text-white px-5 py-3 rounded-lg shadow-md transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
+              type="button"
+              onClick={() => {
+                setShowForm(true)
+                setEditAuthor(null)
+                resetForm()
+              }}
+            >
+              <FaPlus className="mr-2" /> Nuevo Autor
+            </button>
+          )}
         </div>
 
         {/* Formulario de autor (ahora arriba) */}
@@ -431,10 +435,18 @@ export default function AuthorDashboard() {
                       value={form.nationality}
                       onChange={handleInput}
                     />
-                  </div>
-                  <div className="md:col-span-2">
-                    
-                    
+                  </div>                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="biography">
+                      Biografía
+                    </label>
+                    <textarea
+                      id="biography"
+                      name="biography"
+                      rows="4"
+                      className="block w-full px-4 py-3 rounded-lg border focus:outline-none transition-all border-gray-300"
+                      value={form.biography}
+                      onChange={handleInput}
+                    ></textarea>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end gap-3">
@@ -583,8 +595,7 @@ export default function AuthorDashboard() {
                         {author.nationality || "-"}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex-1 mb-4">
+                  </div>                  <div className="flex-1 mb-4">
                     <div className="text-gray-700 text-sm line-clamp-3 mb-2">
                       {author.biography ? author.biography : <span className="italic text-gray-400">Sin biografía</span>}
                     </div>
@@ -594,22 +605,24 @@ export default function AuthorDashboard() {
                       <FaBook className="mr-1" />
                       {author.book_count || 0} libro{author.book_count === 1 ? "" : "s"}
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(author)}
-                        className="p-2 rounded-full bg-[#2366a8] hover:bg-[#1d5a9a] text-white transition-colors shadow"
-                        title="Editar autor"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(author)}
-                        className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow"
-                        title="Eliminar autor"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
+                    {isLibrarianOrAdmin() && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(author)}
+                          className="p-2 rounded-full bg-[#2366a8] hover:bg-[#1d5a9a] text-white transition-colors shadow"
+                          title="Editar autor"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(author)}
+                          className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow"
+                          title="Eliminar autor"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}

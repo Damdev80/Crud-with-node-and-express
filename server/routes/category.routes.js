@@ -1,5 +1,6 @@
 import express from 'express';
 import Category from '../models/category.model.js';
+import { isAuthenticated, isLibrarianOrAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const newCategory = await Category.create(req.body);
     res.status(201).json(newCategory);
@@ -31,7 +32,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const updated = await Category.update(req.params.id, req.body);
     res.json(updated);
@@ -40,7 +41,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', isAuthenticated, isLibrarianOrAdmin, async (req, res) => {
   try {
     const deleted = await Category.delete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Categoría no encontrada' });

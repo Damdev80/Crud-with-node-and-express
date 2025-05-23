@@ -116,9 +116,8 @@ class Loan {
       throw error;
     }
   }
-
   // Devolver un libro
-  static async returnBook(id) {
+  static async returnBook(id, returnDate = null) {
     try {
       // Iniciar transacción
       const connection = await pool.getConnection();
@@ -145,10 +144,13 @@ class Loan {
           throw new Error('Este libro ya ha sido devuelto');
         }
 
+        // Usar la fecha proporcionada o la fecha actual
+        const actualReturnDate = returnDate ? new Date(returnDate) : new Date();
+        
         // Actualizar el préstamo a devuelto
         await connection.query(
           'UPDATE loans SET actual_return_date = ?, status = ? WHERE loan_id = ?',
-          [new Date(), 'returned', id]
+          [actualReturnDate, 'returned', id]
         );
 
         // Incrementar la disponibilidad del libro

@@ -384,11 +384,10 @@ const Dashboard = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory, selectedAuthor]);
-
   const statCards = [{
     icon: <FaBookOpen className="text-[#2366a8] text-xl" />, 
     bg: "bg-[#e3f0fb]", 
-    label: "Total de Libros", 
+    label: "Total de Editoriales", 
     value: stats.totalBooks,
     onClick: () => navigate('/editorial-dashboard')
   }, {
@@ -408,7 +407,8 @@ const Dashboard = () => {
     bg: "bg-purple-100", 
     label: "Préstamos", 
     value: stats.loans,
-    onClick: () => navigate('/loan-dashboard')
+    onClick: () => isLibrarianOrAdmin() ? navigate('/loan-dashboard') : alert("Solo bibliotecarios y administradores pueden acceder a esta sección"),
+    restricted: !isLibrarianOrAdmin()
   }];
 
   return (
@@ -421,9 +421,8 @@ const Dashboard = () => {
               Mi Biblioteca
             </h1>
           </div>
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            {/* Solo mostrar botón de añadir libro si es bibliotecario o admin */}
-            {isLibrarianOrAdmin && (
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">            {/* Solo mostrar botón de añadir libro si es bibliotecario o admin */}
+            {isLibrarianOrAdmin() && (
               <button
                 onClick={handleAddBookTransition}
                 className="flex items-center bg-[#79b2e9] hover:bg-[#2366a8] text-white px-4 py-2 rounded-lg transition-colors"
@@ -432,9 +431,8 @@ const Dashboard = () => {
                 Añadir Libro
               </button>
             )}
-            
-            {/* Mostrar enlace a administración de usuarios solo para admins */}
-            {isAdmin && (
+              {/* Mostrar enlace a administración de usuarios solo para admins */}
+            {isAdmin() && (
               <button
                 onClick={() => navigate('/admin/users')}
                 className="flex items-center bg-[#2366a8] hover:bg-[#1d5a9a] text-white px-4 py-2 rounded-lg transition-colors"
@@ -460,12 +458,11 @@ const Dashboard = () => {
 
       {/* Estadísticas */}
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Tarjetas de estadísticas con animación fade-in escalonada y navegación */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">          {/* Tarjetas de estadísticas con animación fade-in escalonada y navegación */}
           {statCards.map((stat, idx) => (
             <div
               key={stat.label}
-              className="bg-white rounded-xl shadow-md p-6 flex items-center cursor-pointer hover:bg-[#e3f0fb] transition-colors"
+              className={`bg-white rounded-xl shadow-md p-6 flex items-center cursor-pointer hover:bg-[#e3f0fb] transition-colors ${stat.restricted ? 'relative' : ''}`}
               style={{
                 opacity: 0,
                 transform: 'translateY(32px)',
@@ -478,6 +475,13 @@ const Dashboard = () => {
                 e.currentTarget.style.transform = 'none';
               }}
             >
+              {stat.restricted && (
+                <div className="absolute inset-0 bg-gray-100 bg-opacity-60 flex items-center justify-center rounded-xl">
+                  <span className="bg-white px-2 py-1 rounded text-xs text-gray-600 font-medium shadow">
+                    Acceso restringido
+                  </span>
+                </div>
+              )}
               <div className={`rounded-full ${stat.bg} p-3 mr-4`}>
                 {stat.icon}
               </div>

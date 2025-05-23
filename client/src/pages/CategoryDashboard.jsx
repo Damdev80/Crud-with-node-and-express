@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaBook } from "react-icons/fa";
 import { getCategories } from "../services/filterService";
+import { useAuth } from "../context/AuthContext";
 
 export default function CategoryDashboard() {
+  const { isLibrarianOrAdmin } = useAuth();
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -94,17 +96,18 @@ export default function CategoryDashboard() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-[#2366a8] flex items-center">
             <FaBook className="mr-2" /> Categorías
-          </h1>
-          <button
-            className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] text-white px-4 py-2 rounded-lg shadow hover:from-[#17406a] hover:to-[#2366a8] transition-colors"
-            onClick={() => {
-              setShowForm(true);
-              setEditCategory(null);
-              setForm({ name: "", description: "" });
-            }}
-          >
-            <FaPlus className="mr-2" /> Nueva Categoría
-          </button>
+          </h1>          {isLibrarianOrAdmin() && (
+            <button
+              className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] text-white px-4 py-2 rounded-lg shadow hover:from-[#17406a] hover:to-[#2366a8] transition-colors"
+              onClick={() => {
+                setShowForm(true);
+                setEditCategory(null);
+                setForm({ name: "", description: "" });
+              }}
+            >
+              <FaPlus className="mr-2" /> Nueva Categoría
+            </button>
+          )}
         </div>
 
         {showForm && (
@@ -177,23 +180,24 @@ export default function CategoryDashboard() {
                 className="bg-white rounded-xl shadow-md p-6 flex flex-col gap-2 border border-[#79b2e9] animate-fade-in hover:scale-[1.02] hover:shadow-xl transition-transform"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-lg font-bold text-[#2366a8]">{cat.name}</div>
-                  <div className="flex gap-2">
-                    <button
-                      className="p-2 rounded-full bg-[#e3f0fb] hover:bg-[#79b2e9] text-[#2366a8] transition-colors"
-                      onClick={() => handleEdit(cat)}
-                      title="Editar"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="p-2 rounded-full bg-red-100 hover:bg-red-300 text-red-600 transition-colors"
-                      onClick={() => handleDelete(cat)}
-                      title="Eliminar"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
+                  <div className="text-lg font-bold text-[#2366a8]">{cat.name}</div>                  {isLibrarianOrAdmin() && (
+                    <div className="flex gap-2">
+                      <button
+                        className="p-2 rounded-full bg-[#e3f0fb] hover:bg-[#79b2e9] text-[#2366a8] transition-colors"
+                        onClick={() => handleEdit(cat)}
+                        title="Editar"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="p-2 rounded-full bg-red-100 hover:bg-red-300 text-red-600 transition-colors"
+                        onClick={() => handleDelete(cat)}
+                        title="Eliminar"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="text-gray-600 text-sm min-h-[32px]">{cat.description || <span className="italic text-gray-400">Sin descripción</span>}</div>
               </div>

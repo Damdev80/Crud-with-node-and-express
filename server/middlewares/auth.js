@@ -56,7 +56,7 @@ export const isAdmin = (req, res, next) => {
     });
   }
   next();
-};
+};  
 
 /**
  * Middleware para verificar si el usuario es bibliotecario o admin

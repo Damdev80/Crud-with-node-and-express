@@ -34,7 +34,9 @@ export const createLoan = async (req, res) => {
 // Devolver libro
 export const returnLoan = async (req, res) => {
   try {
-    const ok = await Loan.returnBook(req.params.id);
+    // Usar la fecha proporcionada por el cliente o la fecha actual
+    const { actual_return_date } = req.body;
+    const ok = await Loan.returnBook(req.params.id, actual_return_date);
     res.json({ success: ok, message: ok ? 'Libro devuelto' : 'No se pudo devolver' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
