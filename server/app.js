@@ -96,6 +96,7 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on ${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:'}${PORT}`);
+  console.log(`🔧 DB_PROVIDER: ${process.env.DB_PROVIDER}`); // Force deploy v2
 });
 
 export { app, server };
