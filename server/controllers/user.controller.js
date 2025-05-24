@@ -108,14 +108,12 @@ export const registerUser = async (req, res) => {
       password: hashedPassword, 
       role: validRole 
     };
-    console.log('💾 [REGISTER] About to create user with data:', { ...userData, password: '[HIDDEN]' });
-    
-    const newUser = await User.create(userData);
+    console.log('💾 [REGISTER] About to create user with data:', { ...userData, password: '[HIDDEN]' });    const newUser = await User.create(userData);
     console.log('✅ [REGISTER] User created successfully:', { ...newUser, password: '[HIDDEN]' });
     
-    // No exponer password
-    delete newUser.password;
-    res.status(201).json({ success: true, data: newUser });
+    // No exponer password - crear nuevo objeto sin password
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json({ success: true, data: userWithoutPassword });
   } catch (error) {
     console.error('❌ [REGISTER] Registration failed:', {
       message: error.message,
