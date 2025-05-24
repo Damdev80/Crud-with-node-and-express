@@ -79,6 +79,22 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint para verificar variables de entorno
+app.get('/debug/env', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      DB_PROVIDER: process.env.DB_PROVIDER,
+      hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
+      hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      port: process.env.PORT || 8000
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Middleware para manejar rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({ 
