@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Apply temporary environment fix for production
+import './temp-env-fix.js';
+
 import authorRoutes from './routes/author.routes.js';
 import bookRoutes from './routes/book.routes.js';
 import categoryRoutes from './routes/category.routes.js';
