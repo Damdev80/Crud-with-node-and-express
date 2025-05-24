@@ -1,4 +1,4 @@
-# 📚 Sistema de Biblioteca CRUD (Node.js, Express, MySQL, React)
+# 📚 Sistema de Biblioteca CRUD (Node.js, Express, Turso/MySQL, React)
 
 ¡Bienvenido al sistema de gestión de biblioteca! Este proyecto es una solución completa para administrar libros, autores, categorías, préstamos, usuarios y editoriales, con un enfoque en la simplicidad, la experiencia de usuario y la modernidad visual.
 
@@ -6,8 +6,9 @@
 
 ## 🚀 Tecnologías principales
 
-- **Backend:** Node.js, Express, MySQL
+- **Backend:** Node.js, Express, Turso/MySQL
 - **Frontend:** React (Vite), HTML, CSS (paleta azul pastel, UI moderna y sencilla)
+- **Despliegue:** Render (backend), Vercel (frontend)
 
 ---
 
@@ -92,18 +93,73 @@
 
 ---
 
-## ⚡ Instalación y uso rápido
+## 🚀 Despliegue en producción
+
+El sistema está preparado para ser desplegado en producción utilizando:
+
+- **Base de datos:** [Turso](https://turso.tech) (SQLite en la nube, reemplazando MySQL)
+- **Backend:** [Render](https://render.com)
+- **Frontend:** [Vercel](https://vercel.com)
+
+### Guía rápida de despliegue
+
+1. **Preparación**:
+   ```bash
+   # Desde la raíz del proyecto
+   npm install
+   ```
+
+2. **Configuración de Turso**:
+   ```bash
+   # Instalar CLI y preparar base de datos
+   npm install -g turso
+   turso auth login
+   turso db create biblioteca
+   turso db show biblioteca --url
+   turso db tokens create biblioteca
+   ```
+   
+3. **Configura los archivos `.env`**:
+   - Copia `server/.env.example` a `server/.env`
+   - Copia `client/.env.example` a `client/.env`
+   - Actualiza con tus credenciales de Turso
+
+4. **Despliegue del backend en Render**:
+   - Conecta tu repositorio en Render
+   - Usa la configuración del archivo `render.yaml` o consulta el [README del servidor](./server/README.md)
+
+5. **Despliegue del frontend en Vercel**:
+   - Conecta tu repositorio en Vercel
+   - Configura el directorio raíz como `client`
+   - Establece la variable `VITE_API_URL` con la URL de tu backend
+
+Consulta [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones detalladas.
+
+---
+
+## ⚡ Instalación y uso local
 
 1. **Clona el repositorio**
-2. Instala dependencias en ambos proyectos:
+2. Instala dependencias:
    ```bash
-   cd server && npm install
-   cd ../client && npm install
+   npm run install:all
    ```
-3. Configura la base de datos MySQL y variables de entorno si es necesario
-4. Inicia el backend:
+3. Configura la base de datos:
+   - **Para MySQL**: Importa el esquema SQL a tu servidor local
+   - **Para Turso**: Configura según las instrucciones de despliegue
+   - Actualiza las variables en `server/.env`
+
+4. Inicia el servidor:
    ```bash
-   cd server && npm start
+   npm run start:server
+   ```
+   
+5. Inicia el cliente:
+   ```bash
+   npm run start:client
+   ```
+   
+6. Abre http://localhost:5173 en tu navegador
    ```
 5. Inicia el frontend:
    ```bash

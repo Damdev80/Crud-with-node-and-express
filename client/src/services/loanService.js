@@ -1,9 +1,13 @@
 // Servicio para obtener préstamos desde el backend
+import apiService from './apiService.js';
 
 export const getLoans = async () => {
-  const res = await fetch('http://localhost:3000/api/loans');
-  if (!res.ok) throw new Error('Error al obtener préstamos');
-  const data = await res.json();
-  // Compatibilidad con respuesta { success, data }
-  return Array.isArray(data) ? data : data.data;
+  try {
+    const data = await apiService.get('/loans');
+    // Compatibilidad con respuesta { success, data }
+    return Array.isArray(data) ? data : data.data;
+  } catch (error) {
+    console.error('Error al obtener préstamos:', error);
+    throw new Error('Error al obtener préstamos');
+  }
 };

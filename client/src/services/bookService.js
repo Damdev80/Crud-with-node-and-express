@@ -1,5 +1,11 @@
+import apiService from './apiService.js';
+
 export const getBooks = async () => {
-  const res = await fetch("http://localhost:3000/api/books");
-  const data = await res.json();
-  return data.data || [];
+  try {
+    const data = await apiService.get('/books');
+    return data.data || [];
+  } catch (error) {
+    console.error('Error al obtener libros:', error);
+    return [];
+  }
 };
