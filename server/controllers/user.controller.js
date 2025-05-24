@@ -69,7 +69,7 @@ export const getUserLoans = async (req, res) => {
 // Registro de usuario seguro
 export const registerUser = async (req, res) => {
   try {
-    console.log('🚀 [REGISTER] Starting user registration process');
+    console.log('🚀 [REGISTER] Starting user registration process - VERSION 2.0 WITH DESTRUCTURING');
     console.log('🔧 [REGISTER] DB Provider:', process.env.DB_PROVIDER);
     console.log('🔧 [REGISTER] User model type:', User.constructor.name);
     console.log('📝 [REGISTER] Request body:', { ...req.body, password: '[HIDDEN]' });
@@ -110,9 +110,11 @@ export const registerUser = async (req, res) => {
     };
     console.log('💾 [REGISTER] About to create user with data:', { ...userData, password: '[HIDDEN]' });    const newUser = await User.create(userData);
     console.log('✅ [REGISTER] User created successfully:', { ...newUser, password: '[HIDDEN]' });
+    console.log('🔄 [REGISTER] USING UPDATED CODE - DESTRUCTURING VERSION 2.0');
     
     // No exponer password - crear nuevo objeto sin password
     const { password: _, ...userWithoutPassword } = newUser;
+    console.log('✅ [REGISTER] Password removed successfully via destructuring');
     res.status(201).json({ success: true, data: userWithoutPassword });
   } catch (error) {
     console.error('❌ [REGISTER] Registration failed:', {
