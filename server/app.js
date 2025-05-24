@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 // Apply temporary environment fix for production
 import './temp-env-fix.js';
 
+// Force deployment refresh
+
 import authorRoutes from './routes/author.routes.js';
 import bookRoutes from './routes/book.routes.js';
 import categoryRoutes from './routes/category.routes.js';
