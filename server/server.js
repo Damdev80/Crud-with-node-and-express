@@ -20,4 +20,7 @@ process.on('SIGINT', () => {
   });
 });
 
+// Log que el servidor está iniciado
+console.log('🚀 Biblioteca server starting...');
+
 export default app;

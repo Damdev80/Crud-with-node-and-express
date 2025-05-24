@@ -13,14 +13,11 @@
         "mysql2": "3.14.1",
         "@libsql/client": "^0.5.1"
   },
-  "devDependencies": {
-        "framer-motion": "^12.10.5",
-        "motion": "^12.10.5"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch server.js",
-    "start": "node migrations/run.js && node server.js",
+    "start": "node server.js",
+    "start:migrate": "node migrations/run.js && node server.js",
     "migrate:turso": "node migrations/run.js"
   },
   "keywords": [],

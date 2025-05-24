@@ -20,7 +20,7 @@ app.use(express.json());
 // Aplicar middleware para extraer el usuario de la petición
 app.use(processUser);
 
-const PORT = process.env.PORT ?? 5000;
+const PORT = process.env.PORT || 8000;
 
 // Servir archivos estáticos de la carpeta uploads
 app.use('/uploads', express.static('uploads'));
