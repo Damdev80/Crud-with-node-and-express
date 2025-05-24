@@ -4,6 +4,12 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+console.log('🏭 [MODEL-FACTORY] Initializing...');
+console.log('🏭 [MODEL-FACTORY] DB_PROVIDER from env:', process.env.DB_PROVIDER);
+console.log('🏭 [MODEL-FACTORY] NODE_ENV:', process.env.NODE_ENV);
+console.log('🏭 [MODEL-FACTORY] TURSO_DATABASE_URL present:', !!process.env.TURSO_DATABASE_URL);
+console.log('🏭 [MODEL-FACTORY] TURSO_AUTH_TOKEN present:', !!process.env.TURSO_AUTH_TOKEN);
+
 // Import MySQL models
 import Book from './book.model.js';
 import Author from './author.model.js';
@@ -22,6 +28,9 @@ import TursoUser from './turso-user.model.js';
 
 // Check if we should use Turso
 const useTurso = process.env.DB_PROVIDER === 'turso';
+
+console.log('🏭 [MODEL-FACTORY] useTurso decision:', useTurso);
+console.log('🏭 [MODEL-FACTORY] Will use:', useTurso ? 'Turso models' : 'MySQL models');
 
 /**
  * Model factory that returns the appropriate model implementation

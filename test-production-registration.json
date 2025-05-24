@@ -1,0 +1,6 @@
+{
+  "name": "Production Test User",
+  "email": "productiontest@example.com",
+  "password": "TestPassword123!",
+  "role": "user"
+}
