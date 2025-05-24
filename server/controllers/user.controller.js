@@ -141,21 +141,21 @@ export const loginUser = async (req, res) => {
     const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
-    }
-    // Validar contraseña
+    }    // Validar contraseña
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
-    // No exponer password
-    delete user.password;
+    
+    // No exponer password - crear nuevo objeto sin password
+    const { password: _, ...userWithoutPassword } = user;
     
     // Generar token (en un sistema real usarías JWT)
     // Por ahora, simplemente retornamos la info del usuario con su rol
     res.json({ 
       success: true, 
       data: {
-        ...user,
+        ...userWithoutPassword,
         // Garantizamos que el rol exista y sea válido
         role: user.role && ['user', 'librarian', 'admin'].includes(user.role) 
           ? user.role 
