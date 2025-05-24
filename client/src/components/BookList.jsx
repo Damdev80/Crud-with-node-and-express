@@ -3,6 +3,7 @@
 import { useState } from "react"
 import BookCard from "./BookCard"
 import BookModal from "./BookModal"
+import { API_ENDPOINTS } from '../config/api.js'
 
 const BookList = ({ books = [], viewMode = "grid", isLoading = false }) => {
   const [selected, setSelected] = useState(null)
@@ -54,9 +55,8 @@ const BookList = ({ books = [], viewMode = "grid", isLoading = false }) => {
               className="py-4 flex items-center hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setSelected(book)}
             >
-              <div className="w-16 h-24 overflow-hidden rounded mr-4">
-                <img
-                  src={`http://localhost:3000/uploads/${book.cover_image}`}
+              <div className="w-16 h-24 overflow-hidden rounded mr-4">                <img
+                  src={`${API_ENDPOINTS.uploads}/${book.cover_image}`}
                   alt={book.title}
                   className="w-full h-full object-cover"
                 />

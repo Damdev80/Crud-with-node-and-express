@@ -2,14 +2,10 @@
  * Servicio centralizado para la API
  * Maneja todas las peticiones al backend con una configuración común
  */
-
-// Determinar la URL de la API según el entorno
-const NODE_ENV = import.meta.env.VITE_NODE_ENV || 'development';
-const DEV_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://biblioteca-api.onrender.com';
+import { API_BASE_URL } from '../config/api.js';
 
 // URL base de la API
-const API_URL = NODE_ENV === 'production' ? PROD_API_URL : DEV_API_URL;
+const API_URL = API_BASE_URL;
 
 /**
  * Función genérica para hacer peticiones a la API

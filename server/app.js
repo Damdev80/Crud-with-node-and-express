@@ -14,7 +14,41 @@ import { runMigration } from './migrations/migrate-controller.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Configurar CORS para permitir múltiples orígenes
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173', 
+  'https://localhost:3000',
+  'https://localhost:5173',
+  process.env.FRONTEND_URL, // Para configurar en Render
+];
+
+// Añadir dominios de Vercel si están definidos
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (mobile apps, postman, etc)
+    if (!origin) return callback(null, true);
+    
+    // Permitir todos los dominios de Vercel (*.vercel.app)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Permitir orígenes específicos
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('No permitido por CORS'));
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Aplicar middleware para extraer el usuario de la petición

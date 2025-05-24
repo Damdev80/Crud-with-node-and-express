@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { BookOpen, Plus, Pencil, Trash2, Save, Search, AlertCircle, ArrowUpDown } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
-
-const API_URL = "http://localhost:3000/api/editorials"
+import { API_ENDPOINTS } from '../config/api.js'
 
 export default function EditorialDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
@@ -53,7 +52,7 @@ export default function EditorialDashboard() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(API_URL)
+      const res = await fetch(API_ENDPOINTS.editorials)
       const data = await res.json()
 
       // Add a random book count for demonstration purposes
@@ -86,14 +85,14 @@ export default function EditorialDashboard() {
 
     try {
       if (editEditorial) {
-        await fetch(`${API_URL}/${editEditorial.editorial_id}`, {
+        await fetch(`${API_ENDPOINTS.editorials}/${editEditorial.editorial_id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         })
         alert("Editorial actualizada correctamente.")
       } else {
-        await fetch(API_URL, {
+        await fetch(API_ENDPOINTS.editorials, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
@@ -124,7 +123,7 @@ export default function EditorialDashboard() {
     if (!editorialToDelete) return
 
     try {
-      await fetch(`${API_URL}/${editorialToDelete}`, { method: "DELETE" })
+      await fetch(`${API_ENDPOINTS.editorials}/${editorialToDelete}`, { method: "DELETE" })
       alert("Editorial eliminada correctamente.")
       fetchEditorials()
     } catch {

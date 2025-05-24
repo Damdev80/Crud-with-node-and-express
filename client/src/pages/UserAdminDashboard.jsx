@@ -4,6 +4,7 @@ import { FaUser, FaUserEdit, FaTrash, FaUserCog, FaUserPlus, FaFilter, FaSearch,
 import { useAuth } from '../context/AuthContext';
 import CreateUserForm from '../components/CreateUserForm';
 import UserView from '../components/UserView';
+import { API_ENDPOINTS } from '../config/api.js';
 
 const UserAdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -47,11 +48,10 @@ const UserAdminDashboard = () => {
   // Obtener usuarios
   const fetchUsers = async () => {
     setLoading(true);
-    setError(null);
-    try {
+    setError(null);    try {
       // Para este ejemplo, usamos el endpoint normal de usuarios
       // En una implementación real, deberías tener un endpoint específico para administradores
-      const response = await fetch('http://localhost:3000/api/users', {
+      const response = await fetch(API_ENDPOINTS.users, {
         headers: {
           // En un sistema real, aquí irían los headers de autenticación
           'x-user-id': user?.user_id, // Simulamos headers para nuestro middleware
@@ -83,9 +83,8 @@ const UserAdminDashboard = () => {
     try {
       if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
         console.log('Eliminando usuario con ID:', userId);
-        
-        // Hacer la solicitud al backend para eliminar el usuario
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+          // Hacer la solicitud al backend para eliminar el usuario
+        const response = await fetch(`${API_ENDPOINTS.users}/${userId}`, {
           method: 'DELETE',
           headers: {
             // En un entorno de producción, usar un token JWT
@@ -125,10 +124,8 @@ const UserAdminDashboard = () => {
         const userToUpdate = users.find(u => u.user_id === userId);
       if (!userToUpdate) {
         throw new Error('Usuario no encontrado');
-      }
-
-      // Hacer la solicitud al backend para actualizar el rol del usuario
-      const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+      }      // Hacer la solicitud al backend para actualizar el rol del usuario
+      const response = await fetch(`${API_ENDPOINTS.users}/${userId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

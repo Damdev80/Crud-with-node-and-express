@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { API_ENDPOINTS } from '../config/api.js'
 import {
   FaBook,
   FaUser,
@@ -84,7 +85,7 @@ export default function LoanDashboard() {
   // Función para obtener libros
   const fetchBooks = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/books")
+      const res = await fetch(`${import.meta.env.VITE_NODE_ENV === 'production' ? 'https://crud-with-node-and-express.onrender.com' : 'http://localhost:8000'}/api/books`)
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data = await res.json()
       setBooks(data.data || [])
@@ -109,8 +110,7 @@ export default function LoanDashboard() {
         });
         return [];
       }
-      
-      const res = await fetch("http://localhost:3000/api/users", {
+        const res = await fetch(API_ENDPOINTS.users, {
         headers: {
           'Content-Type': 'application/json',
           // Incluir las credenciales de autenticación
@@ -157,8 +157,7 @@ export default function LoanDashboard() {
     try {
       // Obtener el usuario actual del localStorage para autenticación
       const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-      
-      const res = await fetch("http://localhost:3000/api/loans", {
+        const res = await fetch(API_ENDPOINTS.loans, {
         headers: {
           'x-user-id': currentUser.user_id,
           'x-user-role': currentUser.role
@@ -302,7 +301,7 @@ export default function LoanDashboard() {
       }
       
       if (editLoan) {
-        const res = await fetch(`http://localhost:3000/api/loans/${editLoan.loan_id}`, {
+        const res = await fetch(`${API_ENDPOINTS.loans}/${editLoan.loan_id}`, {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
@@ -319,7 +318,7 @@ export default function LoanDashboard() {
         }
         showNotification("success", "Préstamo actualizado correctamente")
       } else {
-        const res = await fetch("http://localhost:3000/api/loans", {
+        const res = await fetch(API_ENDPOINTS.loans, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -397,7 +396,7 @@ export default function LoanDashboard() {
         throw new Error('Debe iniciar sesión para eliminar un préstamo');
       }
       
-      const res = await fetch(`http://localhost:3000/api/loans/${confirmDelete.loan_id}`, { 
+      const res = await fetch(`${API_ENDPOINTS.loans}/${confirmDelete.loan_id}`, { 
         method: "DELETE",
         headers: {
           // Incluir las credenciales de autenticación
@@ -434,7 +433,7 @@ export default function LoanDashboard() {
         throw new Error('Debe iniciar sesión para devolver un libro');
       }
       
-      const res = await fetch(`http://localhost:3000/api/loans/${loan.loan_id}/return`, {
+      const res = await fetch(`${API_ENDPOINTS.loans}/${loan.loan_id}/return`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

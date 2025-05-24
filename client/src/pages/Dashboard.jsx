@@ -23,6 +23,7 @@ import { getCategories, getAuthors } from '../services/filterService';
 import { getLoans } from '../services/loanService';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { API_ENDPOINTS } from '../config/api.js';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ const Dashboard = () => {
   const fetchBooks = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("http://localhost:3000/api/books")
+      const response = await fetch(API_ENDPOINTS.books)
       const data = await response.json()
 
       if (data.data) {
@@ -503,7 +504,7 @@ const Dashboard = () => {
             <div className="flex flex-col md:flex-row items-center">
               <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
                 <img
-                  src={`http://localhost:3000/uploads/${stats.mostViewed.cover_image}`}
+                  src={`${API_ENDPOINTS.uploads}/${stats.mostViewed.cover_image}`}
                   alt={stats.mostViewed.title}
                   className="w-full h-full object-cover transition-transform duration-700 hover:scale-105 hover:shadow-2xl animate-fade-in"
                 />
@@ -688,9 +689,8 @@ const Dashboard = () => {
                       <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
                         <img
                           src={book.cover_image && book.cover_image.startsWith('http')
-                            ? book.cover_image
-                            : book.cover_image
-                              ? `http://localhost:3000/uploads/${book.cover_image}`
+                            ? book.cover_image                            : book.cover_image
+                              ? `${API_ENDPOINTS.uploads}/${book.cover_image}`
                               : '/public/vite.svg'}
                           alt={book.title}
                           className="w-full h-full object-cover"
@@ -736,7 +736,7 @@ const Dashboard = () => {
                     <div key={book.book_id} className="py-4 flex items-center hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openBookModal(book)}>
                       <div className="w-16 h-24 overflow-hidden rounded mr-4">
                         <img
-                          src={`http://localhost:3000/uploads/${book.cover_image}`}
+                          src={`${API_ENDPOINTS.uploads}/${book.cover_image}`}
                           alt={book.title}
                           className="w-full h-full object-cover"
                         />
@@ -818,9 +818,8 @@ const Dashboard = () => {
             <div className="flex flex-col items-center">
               <img
                 src={selectedBook.cover_image && selectedBook.cover_image.startsWith('http')
-                  ? selectedBook.cover_image
-                  : selectedBook.cover_image
-                    ? `http://localhost:3000/uploads/${selectedBook.cover_image}`
+                  ? selectedBook.cover_image                  : selectedBook.cover_image
+                    ? `${API_ENDPOINTS.uploads}/${selectedBook.cover_image}`
                     : '/public/vite.svg'}
                 alt={selectedBook.title}
                 className="w-40 h-60 object-cover rounded-lg shadow mb-4 border"

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { FaBook, FaUpload, FaTimes, FaSave, FaArrowLeft } from "react-icons/fa"
 import { getAuthors, getCategories, getEditorials } from '../services/filterService';
+import { API_ENDPOINTS } from '../config/api.js';
 
 const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const [form, setForm] = useState({
@@ -20,12 +21,11 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const [authors, setAuthors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [editorials, setEditorials] = useState([]);
-
   // Inicializar imagePreview correctamente para edición y nuevo libro
   const initialImagePreview = initialData.cover_image
     ? (initialData.cover_image.startsWith('http')
         ? initialData.cover_image
-        : `http://localhost:3000/uploads/${initialData.cover_image}`)
+        : `${API_ENDPOINTS.uploads}/${initialData.cover_image}`)
     : null;
 
   const [imagePreview, setImagePreview] = useState(initialImagePreview)
@@ -100,12 +100,11 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
         available_copies: initialData.available_copies || "",
         description: initialData.description || "",
         cover_image: null, // No sobrescribir la imagen existente
-      });
-      setImagePreview(
+      });      setImagePreview(
         initialData.cover_image
           ? (initialData.cover_image.startsWith('http')
               ? initialData.cover_image
-              : `http://localhost:3000/uploads/${initialData.cover_image}`)
+              : `${API_ENDPOINTS.uploads}/${initialData.cover_image}`)
           : null
       );
     }

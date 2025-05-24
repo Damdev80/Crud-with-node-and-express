@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api.js';
 
 // Crear el contexto
 const AuthContext = createContext();
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }) => {
   // Función para iniciar sesión
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:3000/api/users/login', {
+      const response = await fetch(`${API_ENDPOINTS.users}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,11 +58,10 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
-
   // Función para registrar un nuevo usuario
   const register = async (userData) => {
     try {
-      const response = await fetch('http://localhost:3000/api/users/register', {
+      const response = await fetch(`${API_BASE_URL}/api/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

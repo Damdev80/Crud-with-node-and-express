@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { FaBook, FaArrowLeft, FaExclamationTriangle, FaSave, FaTimes } from "react-icons/fa"
 import BookForm from "../components/BookForm"
+import { API_ENDPOINTS } from '../config/api.js'
 
 export default function EditBook() {
   const { id } = useParams()
@@ -24,7 +25,7 @@ export default function EditBook() {
     setError(null)
 
     try {
-      const response = await fetch(`http://localhost:3000/api/books/${id}`)
+      const response = await fetch(`${API_ENDPOINTS.books}/${id}`)
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
@@ -60,7 +61,7 @@ export default function EditBook() {
         }
       }
 
-      const response = await fetch(`http://localhost:3000/api/books/${id}`, {
+      const response = await fetch(`${API_ENDPOINTS.books}/${id}`, {
         method: "PUT",
         body: data,
       })
