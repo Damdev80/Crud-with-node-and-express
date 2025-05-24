@@ -2,17 +2,14 @@ services:
   # Servicio del servidor de la biblioteca
   - type: web
     name: biblioteca-api
-    env: node
-    region: ohio # Puedes cambiar a la región más cercana a tus usuarios
-    plan: starter # O el plan que necesites    buildCommand: npm install
+    env: node    region: ohio # Puedes cambiar a la región más cercana a tus usuarios
+    plan: starter # O el plan que necesites
+    buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /health
-    rootDir: server # Especificar que el servidor está en la carpeta server
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000 # Render asigna este puerto automáticamente
       - key: DB_PROVIDER
         value: turso
       - key: TURSO_DATABASE_URL
@@ -27,5 +24,5 @@ services:
         value: "https://biblioteca-client.vercel.app,https://biblioteca.yourdomain.com"
     disk:
       name: uploads
-      mountPath: /opt/render/project/src/uploads
+      mountPath: /opt/render/project/src/server/uploads
       sizeGB: 1 # Tamaño del disco persistente
