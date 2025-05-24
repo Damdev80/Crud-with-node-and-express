@@ -1,5 +1,7 @@
-import User from '../models/user.model.js';
+import ModelFactory from '../models/model-factory.js';
 import bcrypt from 'bcryptjs';
+
+const User = ModelFactory.User;
 
 // Listar usuarios
 export const getAllUsers = async (req, res) => {

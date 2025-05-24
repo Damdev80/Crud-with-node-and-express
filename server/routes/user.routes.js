@@ -1,9 +1,10 @@
 import express from 'express';
-import User from '../models/user.model.js';
+import ModelFactory from '../models/model-factory.js';
 import { registerUser, loginUser } from '../controllers/user.controller.js';
 import { isAuthenticated, isAdmin, isLibrarianOrAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
+const User = ModelFactory.User;
 
 // Rutas públicas para registro y login
 router.post('/register', registerUser);
