@@ -57,11 +57,10 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
       throw error;
     }
-  };
-  // Función para registrar un nuevo usuario
+  };  // Función para registrar un nuevo usuario
   const register = async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+      const response = await fetch(`${API_ENDPOINTS.users}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
