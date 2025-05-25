@@ -19,12 +19,14 @@ import {
   FaSpinner,
 } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
-import { useAuth } from "../context/AuthContext"
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from '../config/api.js'
 import { getAuthHeaders } from '../utils/authHeaders.js';
 
 export default function AuthorDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
+  const navigate = useNavigate();
   const [authors, setAuthors] = useState([])
   const [filteredAuthors, setFilteredAuthors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -194,12 +196,12 @@ export default function AuthorDashboard() {
       birth_date: "",
       nationality: "",
       biography: "",
-    })
-    setFormErrors({})
-  }
+    });
+    setFormErrors({});
+  };
 
   const handleEdit = (author) => {
-    setEditAuthor(author)
+    setEditAuthor(author);
     setForm({
       first_name: author.first_name || "",
       last_name: author.last_name || "",
@@ -212,28 +214,30 @@ export default function AuthorDashboard() {
   }
 
   const confirmDelete = (author) => {
-    setAuthorToDelete(author)
-    setShowDeleteModal(true)
-  }  const handleDelete = async () => {
-    if (!authorToDelete) return
+    setAuthorToDelete(author);
+    setShowDeleteModal(true);
+  };
+  
+  const handleDelete = async () => {
+    if (!authorToDelete) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await fetch(`${API_BASE_URL}/api/authors/${authorToDelete.author_id}`, { 
+      await fetch(`${API_BASE_URL}/api/authors/${authorToDelete.author_id}`, {
         method: "DELETE",
-        headers: getAuthHeaders()
-      })
-      showNotification("success", "Autor eliminado correctamente")
-      fetchAuthors()
+        headers: getAuthHeaders(),
+      });
+      showNotification("success", "Autor eliminado correctamente");
+      fetchAuthors();
     } catch (err) {
-      console.error("Error deleting author:", err)
-      showNotification("error", `Error: ${err.message || "No se pudo eliminar el autor"}`)
+      console.error("Error deleting author:", err);
+      showNotification("error", `Error: ${err.message || "No se pudo eliminar el autor"}`);
     } finally {
-      setIsLoading(false)
-      setShowDeleteModal(false)
-      setAuthorToDelete(null)
+      setIsLoading(false);
+      setShowDeleteModal(false);
+      setAuthorToDelete(null);
     }
-  }
+  };
 
   const showNotification = (type, message) => {
     setNotification({ show: true, type, message })
@@ -331,7 +335,7 @@ export default function AuthorDashboard() {
           <button
             className="flex items-center bg-gradient-to-r from-[#79b2e9] to-[#2366a8] hover:from-[#5a9de0] hover:to-[#1d5a9a] text-white px-4 py-2 rounded-lg shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
             type="button"
-            onClick={() => window.location.replace('/dashboard')}
+            onClick={() => navigate('/dashboard')}
           >
             <span className="mr-2">←</span> Volver al Dashboard
           </button>
