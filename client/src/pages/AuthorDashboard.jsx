@@ -44,26 +44,37 @@ export default function AuthorDashboard() {
     nationality: "",
     biography: "",
   })
-
   // Simular conteo de libros para cada autor
-  const getRandomBookCount = () => Math.floor(Math.random() * 15) + 1
+  const getRandomBookCount = () => Math.floor(Math.random() * 15) + 1;
+  
   useEffect(() => {
     fetchAuthors()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
+  
   useEffect(() => {
     if (authors.length > 0) {
       filterAndSortAuthors()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authors, searchTerm, sortConfig])
+  }, [authors, searchTerm, sortConfig]);
+  
   const fetchAuthors = async () => {
     setIsLoading(true)
     setError(null)
     try {
+      console.log('🔍 [AuthorDashboard] Fetching authors from:', `${API_BASE_URL}/api/authors`)
       const res = await fetch(`${API_BASE_URL}/api/authors`)
-      if (!res.ok) throw new Error("Error al cargar los autores")
+      console.log('📡 [AuthorDashboard] Response status:', res.status)
+      
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('❌ [AuthorDashboard] Error response:', errorText)
+        throw new Error(`Error ${res.status}: ${errorText || 'Error al cargar los autores'}`)
+      }
+      
       const data = await res.json()
+      console.log('✅ [AuthorDashboard] Authors received:', data.length, 'authors')
 
       // Añadir conteo de libros simulado para cada autor
       const authorsWithBooks = data.map((author) => ({
@@ -73,8 +84,8 @@ export default function AuthorDashboard() {
 
       setAuthors(authorsWithBooks)
     } catch (err) {
-      console.error("Error fetching authors:", err)
-      setError(err.message || "Ha ocurrido un error al cargar los autores")
+      console.error("❌ [AuthorDashboard] Error fetching authors:", err)
+      setError(`Error de conexión: ${err.message}`)
     } finally {
       setIsLoading(false)
     }
