@@ -1,11 +1,14 @@
 {
   "version": 2,
   "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/dist",
-  "rewrites": [
+  "outputDirectory": "client/dist",  "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://crud-with-node-and-express.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
