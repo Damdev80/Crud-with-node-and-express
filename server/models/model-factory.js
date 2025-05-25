@@ -26,6 +26,8 @@ import TursoEditorial from './turso-editorial.model.js';
 import TursoLoan from './turso-loan.model.js';
 import TursoUser from './turso-user.model.js';
 
+console.log('✅ [MODEL-FACTORY] All models imported successfully');
+
 // Check if we should use Turso
 const useTurso = process.env.DB_PROVIDER === 'turso';
 
@@ -44,29 +46,47 @@ export default {
   get Book() {
     return useTurso ? TursoBook : Book;
   },
-  
-  /**
+    /**
    * Get the Author model
    * @returns {Object} - Author model (MySQL or Turso)
    */
   get Author() {
-    return useTurso ? TursoAuthor : Author;
+    try {
+      const model = useTurso ? TursoAuthor : Author;
+      console.log('🏭 [MODEL-FACTORY] Returning Author model:', useTurso ? 'Turso' : 'MySQL');
+      return model;
+    } catch (error) {
+      console.error('❌ [MODEL-FACTORY] Error getting Author model:', error);
+      throw error;
+    }
   },
-  
-  /**
+    /**
    * Get the Category model
    * @returns {Object} - Category model (MySQL or Turso)
    */
   get Category() {
-    return useTurso ? TursoCategory : Category;
+    try {
+      const model = useTurso ? TursoCategory : Category;
+      console.log('🏭 [MODEL-FACTORY] Returning Category model:', useTurso ? 'Turso' : 'MySQL');
+      return model;
+    } catch (error) {
+      console.error('❌ [MODEL-FACTORY] Error getting Category model:', error);
+      throw error;
+    }
   },
-  
-  /**
+    /**
    * Get the Editorial model
    * @returns {Object} - Editorial model (MySQL or Turso)
    */
   get Editorial() {
-    return useTurso ? TursoEditorial : Editorial;
+    try {
+      const model = useTurso ? TursoEditorial : Editorial;
+      console.log('🏭 [MODEL-FACTORY] Returning Editorial model:', useTurso ? 'Turso' : 'MySQL');
+      return model;
+    } catch (error) {
+      console.error('❌ [MODEL-FACTORY] Error getting Editorial model:', error);
+      throw error;
+    }
   },
   
   /**
