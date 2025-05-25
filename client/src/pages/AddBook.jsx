@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import BookForm from '../components/BookForm';
+import { API_BASE_URL } from '../config/api.js';
 
 export default function AddBook() {
   const [pageTransition, setPageTransition] = useState(true);
@@ -15,8 +16,7 @@ export default function AddBook() {
     const formData = new FormData();
     for (let key in data) {
       formData.append(key, data[key]);
-    }
-    await fetch('http://localhost:3000/api/books/with-image', {
+    }    await fetch(`${API_BASE_URL}/api/books/with-image`, {
       method: 'POST',
       body: formData,
     });

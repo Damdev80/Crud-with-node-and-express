@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaBook } from "react-icons/fa";
 import { getCategories } from "../services/filterService";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from '../config/api.js';
 
 export default function CategoryDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
@@ -43,11 +44,10 @@ export default function CategoryDashboard() {
       setFormError("El nombre es obligatorio");
       return;
     }
-    try {
-      const method = editCategory ? "PUT" : "POST";
+    try {      const method = editCategory ? "PUT" : "POST";
       const url = editCategory
-        ? `http://localhost:3000/api/categories/${editCategory.category_id || editCategory.id}`
-        : "http://localhost:3000/api/categories";
+        ? `${API_BASE_URL}/api/categories/${editCategory.category_id || editCategory.id}`
+        : `${API_BASE_URL}/api/categories`;
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -70,11 +70,10 @@ export default function CategoryDashboard() {
     setForm({ name: cat.name, description: cat.description || "" });
     setShowForm(true);
   };
-
   const handleDelete = async (cat) => {
     if (!window.confirm("¿Eliminar esta categoría?")) return;
     try {
-      const url = `http://localhost:3000/api/categories/${cat.category_id || cat.id}`;
+      const url = `${API_BASE_URL}/api/categories/${cat.category_id || cat.id}`;
       const res = await fetch(url, { method: "DELETE" });
       if (!res.ok) throw new Error();
       fetchCategories();

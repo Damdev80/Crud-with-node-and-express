@@ -20,6 +20,7 @@ import {
 } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "../context/AuthContext"
+import { API_BASE_URL } from '../config/api.js';
 
 export default function AuthorDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
@@ -56,12 +57,11 @@ export default function AuthorDashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authors, searchTerm, sortConfig])
-
   const fetchAuthors = async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch("http://localhost:3000/api/authors")
+      const res = await fetch(`${API_BASE_URL}/api/authors`)
       if (!res.ok) throw new Error("Error al cargar los autores")
       const data = await res.json()
 
@@ -143,7 +143,6 @@ export default function AuthorDashboard() {
       setFormErrors({ ...formErrors, [name]: null })
     }
   }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -152,14 +151,14 @@ export default function AuthorDashboard() {
     setIsLoading(true)
     try {
       if (editAuthor) {
-        await fetch(`http://localhost:3000/api/authors/${editAuthor.author_id}`, {
+        await fetch(`${API_BASE_URL}/api/authors/${editAuthor.author_id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         })
         showNotification("success", "Autor actualizado correctamente")
       } else {
-        await fetch("http://localhost:3000/api/authors", {
+        await fetch(`${API_BASE_URL}/api/authors`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
@@ -206,13 +205,12 @@ export default function AuthorDashboard() {
     setAuthorToDelete(author)
     setShowDeleteModal(true)
   }
-
   const handleDelete = async () => {
     if (!authorToDelete) return
 
     setIsLoading(true)
     try {
-      await fetch(`http://localhost:3000/api/authors/${authorToDelete.author_id}`, { method: "DELETE" })
+      await fetch(`${API_BASE_URL}/api/authors/${authorToDelete.author_id}`, { method: "DELETE" })
       showNotification("success", "Autor eliminado correctamente")
       fetchAuthors()
     } catch (err) {
