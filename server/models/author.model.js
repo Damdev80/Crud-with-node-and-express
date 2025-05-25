@@ -21,7 +21,6 @@ class Author {
       throw error;
     }
   }
-
   // Crear un nuevo autor
   static async create(author) {
     try {
@@ -29,20 +28,20 @@ class Author {
         'INSERT INTO authors (first_name, last_name, birth_date, nationality) VALUES (?, ?, ?, ?)',
         [author.first_name, author.last_name, author.birth_date, author.nationality]
       );
-      return { id: result.insertId, ...author };
+      return { author_id: result.insertId, ...author };
     } catch (error) {
       throw error;
     }
   }
-
   // Actualizar un autor existente
   static async update(id, author) {
     try {
-      await pool.query(
+      const [result] = await pool.query(
         'UPDATE authors SET first_name = ?, last_name = ?, birth_date = ?, nationality = ? WHERE author_id = ?',
         [author.first_name, author.last_name, author.birth_date, author.nationality, id]
       );
-      return { id, ...author };
+      if (result.affectedRows === 0) return null;
+      return { author_id: id, ...author };
     } catch (error) {
       throw error;
     }

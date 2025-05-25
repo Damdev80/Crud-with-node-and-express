@@ -22,9 +22,9 @@ class Editorial {
     const [result] = await pool.query('INSERT INTO editorials (name, description) VALUES (?, ?)', [data.name, data.description]);
     return { editorial_id: result.insertId, ...data };
   }
-
   static async update(id, data) {
-    await pool.query('UPDATE editorials SET name = ?, description = ? WHERE editorial_id = ?', [data.name, data.description, id]);
+    const [result] = await pool.query('UPDATE editorials SET name = ?, description = ? WHERE editorial_id = ?', [data.name, data.description, id]);
+    if (result.affectedRows === 0) return null;
     return { editorial_id: id, ...data };
   }
 
