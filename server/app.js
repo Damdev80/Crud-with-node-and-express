@@ -101,6 +101,32 @@ app.get('/debug/env', (req, res) => {
   });
 });
 
+// Debug endpoint para diagnóstico de producción
+app.get('/debug', (req, res) => {
+  try {
+    res.json({
+      status: 'Debug endpoint working',
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        DB_PROVIDER: process.env.DB_PROVIDER,
+        hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
+        hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        port: process.env.PORT || 8000,
+        tursoUrlLength: process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.length : 0,
+        tursoTokenLength: process.env.TURSO_AUTH_TOKEN ? process.env.TURSO_AUTH_TOKEN.length : 0
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Debug endpoint error',
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Middleware para manejar rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({ 
