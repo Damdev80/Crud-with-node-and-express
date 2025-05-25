@@ -29,10 +29,9 @@ export default function LoanDashboard() {
   // Auth & routing hooks
   const { isLibrarianOrAdmin } = useAuth()
   const navigate = useNavigate()
-  
-  // State hooks
+    // State hooks
   const [loans, setLoans] = useState([])
-  // const [filteredLoans, setFilteredLoans] = useState([])
+  const [filteredLoans, setFilteredLoans] = useState([])
   const [_isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -48,29 +47,37 @@ export default function LoanDashboard() {
   const [form, setForm] = useState({ book_id: "", user_id: "", loan_date: "", return_date: "" })
   const [formErrors, setFormErrors] = useState({})
   const formRef = useRef(null)
-
   // Load data on mount
   useEffect(() => {
     const loadAll = async () => {
+      console.log("🔄 [LOAD] Iniciando carga de datos...")
+      console.log("🔄 [LOAD] Usuario actual:", JSON.parse(localStorage.getItem('user') || '{}'))
       const booksData = await fetchBooks()
       const usersData = await fetchUsers()
       await fetchLoans(booksData, usersData)
+      console.log("✅ [LOAD] Carga de datos completada")
     }
     loadAll()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
+  
   // Filter & sort when data or filters change
   useEffect(() => {
-    if (loans.length > 0) filterAndSortLoans()
+    console.log("🔍 [FILTER-EFFECT] loans.length:", loans.length, "searchTerm:", searchTerm, "filterStatus:", filterStatus)
+    if (loans.length > 0) {
+      filterAndSortLoans()
+    } else {
+      setFilteredLoans([])
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loans, searchTerm, filterStatus, sortConfig])
-
   // Redirect unauthorized users
   if (!isLibrarianOrAdmin()) {
+    console.log("🚫 [AUTH] Usuario no autorizado, redirigiendo...")
     return <Navigate to="/dashboard" replace />
   }
-
+  
+  console.log("📊 [RENDER] Renderizando LoanDashboard - loans:", loans.length, "filteredLoans:", filteredLoans.length)
   // Función para obtener libros
   const fetchBooks = async () => {
     setIsLoading(true)
@@ -79,9 +86,12 @@ export default function LoanDashboard() {
       const res = await fetch(API_ENDPOINTS.books)
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
-      setBooks(data)    } catch (err) {
+      setBooks(data)
+      return data
+    } catch (err) {
       console.error('Error fetching books:', err)
       setError(err.message)
+      return []
     } finally {
       setIsLoading(false)
     }
@@ -145,14 +155,23 @@ export default function LoanDashboard() {
    // Verificación de depuración
    console.log("Libros disponibles:", booksArg.length)
    console.log("Usuarios disponibles:", usersArg.length)
-   
-   try {
+     try {
      // Obtener el usuario actual del localStorage para autenticación
-      const res = await fetch(API_ENDPOINTS.loans, { headers: getAuthHeaders() })
-    if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
-    const data = await res.json()
-    const loansArray = Array.isArray(data) ? data : data.data
-    if (!Array.isArray(loansArray)) throw new Error("Respuesta inesperada de la API de préstamos")
+     const res = await fetch(API_ENDPOINTS.loans, { headers: getAuthHeaders() })
+     if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
+     const data = await res.json()
+       console.log("Respuesta de API loans:", data)
+     
+     // Manejar tanto respuestas con estructura {success, data} como arrays directos
+     let loansArray;
+     if (data.success && Array.isArray(data.data)) {
+       loansArray = data.data;
+     } else if (Array.isArray(data)) {
+       loansArray = data;
+     } else {
+       console.warn("Respuesta inesperada de la API de préstamos:", data)
+       throw new Error("Respuesta inesperada de la API de préstamos")
+     }
     // Enriquecer los datos con los arrays recibidos
     const enrichedLoans = loansArray.map((loan) => {
       const today = new Date()
@@ -169,8 +188,10 @@ export default function LoanDashboard() {
         user_name: user ? user.name : `Usuario #${loan.user_id}`,
       }
     })
+    console.log("Préstamos enriquecidos:", enrichedLoans)
     setLoans(enrichedLoans)
-    filterAndSortLoans([...enrichedLoans])
+    console.log("🔍 [LOANS] Estado de loans después de setLoans:", enrichedLoans.length)
+    // No llamar filterAndSortLoans aquí, el useEffect se encargará cuando loans cambie
   } catch (err) {
     console.error("Error fetching loans:", err)
     setError(err.message || "Error al cargar los préstamos")
@@ -179,11 +200,10 @@ export default function LoanDashboard() {
   }
  }
 
- // (Función enrichLoansData eliminada porque no se utiliza)
-
- // Filtrar y ordenar préstamos
- const filterAndSortLoans = () => {
-   let filtered = [...loans]
+ // (Función enrichLoansData eliminada porque no se utiliza) // Filtrar y ordenar préstamos
+ const filterAndSortLoans = (loansToFilter = loans) => {
+   console.log("🔍 [FILTER] Filtrando préstamos:", loansToFilter.length)
+   let filtered = [...loansToFilter]
 
    // Aplicar filtro de búsqueda
    if (searchTerm) {
@@ -213,7 +233,9 @@ export default function LoanDashboard() {
      return 0
    })
 
-   // setFilteredLoans(filtered)
+   console.log("🔍 [FILTER] Préstamos filtrados:", filtered.length)
+   setFilteredLoans(filtered)
+   return filtered
  }
 
  // Manejar cambios en el formulario
@@ -800,11 +822,83 @@ export default function LoanDashboard() {
              </button>
            </div>
          </div>
-       )}
-         {/* Lista de préstamos */}
+       )}       {/* Lista de préstamos */}
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-         {/* Aquí puedes renderizar la lista de préstamos si lo deseas */}
-         <div className="col-span-full text-gray-500 text-center">No hay préstamos registrados.</div>
+         {filteredLoans.length === 0 ? (
+           <div className="col-span-full text-gray-500 text-center py-8">
+             {loans.length === 0 ? "No hay préstamos registrados." : "No se encontraron préstamos con los filtros aplicados."}
+           </div>
+         ) : (
+           filteredLoans.map((loan) => (
+             <div key={loan.loan_id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+               <div className="flex justify-between items-start mb-4">
+                 <div className="flex-1">
+                   <h3 className="text-lg font-bold text-gray-800 mb-1">{loan.book_title}</h3>
+                   <p className="text-gray-600 mb-2">
+                     <FaUser className="inline mr-1" />
+                     {loan.user_name}
+                   </p>
+                 </div>
+                 <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                   loan.status === "active" ? "bg-green-100 text-green-800" :
+                   loan.status === "overdue" ? "bg-red-100 text-red-800" :
+                   "bg-blue-100 text-blue-800"
+                 }`}>
+                   {loan.status === "active" ? "Activo" :
+                    loan.status === "overdue" ? "Vencido" : "Devuelto"}
+                 </div>
+               </div>
+               
+               <div className="space-y-2 text-sm text-gray-600">
+                 <div className="flex items-center">
+                   <FaCalendarAlt className="mr-2" />
+                   <span>Préstamo: {new Date(loan.loan_date).toLocaleDateString()}</span>
+                 </div>
+                 {loan.return_date && (
+                   <div className="flex items-center">
+                     <FaCalendarCheck className="mr-2" />
+                     <span>Devolución: {new Date(loan.return_date).toLocaleDateString()}</span>
+                   </div>
+                 )}
+                 {loan.actual_return_date && (
+                   <div className="flex items-center">
+                     <FaCheckCircle className="mr-2 text-green-600" />
+                     <span>Devuelto: {new Date(loan.actual_return_date).toLocaleDateString()}</span>
+                   </div>
+                 )}
+               </div>
+               
+               <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-100">
+                 <button
+                   className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                   onClick={() => {
+                     setEditLoan(loan)
+                     setForm({
+                       book_id: loan.book_id,
+                       user_id: loan.user_id,
+                       loan_date: loan.loan_date.split('T')[0],
+                       return_date: loan.return_date ? loan.return_date.split('T')[0] : ''
+                     })
+                     setShowForm(true)
+                     setTimeout(() => {
+                       formRef.current?.scrollIntoView({ behavior: "smooth" })
+                     }, 100)
+                   }}
+                   title="Editar préstamo"
+                 >
+                   <FaEdit />
+                 </button>
+                 <button
+                   className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                   onClick={() => setConfirmDelete(loan)}
+                   title="Eliminar préstamo"
+                 >
+                   <FaTrash />
+                 </button>
+               </div>
+             </div>
+           ))
+         )}
        </div>
      </div>
    </div>
