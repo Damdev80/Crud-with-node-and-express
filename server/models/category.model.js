@@ -85,6 +85,19 @@ class Category {
       throw error;
     }
   }
+
+  // Obtener libros de una categoría
+  static async getBooks(id) {
+    try {
+      const [rows] = await pool.query(
+        'SELECT * FROM books WHERE category_id = ?',
+        [id]
+      );
+      return rows;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default Category;

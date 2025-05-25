@@ -81,6 +81,18 @@ const TursoCategory = {
       console.error('Error in findOrCreateByName:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get all books in a category
+   * @param {number} id - Category ID
+   * @returns {Promise<Array>} - Books in the category
+   */
+  getBooks: async function(id) {
+    const result = await categoryModel.raw(`
+      SELECT * FROM books WHERE category_id = ?
+    `, [id]);
+    return result.rows || [];
   }
 };
 

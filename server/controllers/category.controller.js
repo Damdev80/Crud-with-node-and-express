@@ -146,6 +146,37 @@ class CategoryController {
       });
     }
   }
+
+  // Obtener libros de una categoría
+  static async getBooks(req, res) {
+    try {
+      const id = req.params.id;
+      
+      // Verificar si la categoría existe
+      const category = await Category.getById(id);
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          message: `No se encontró una categoría con ID ${id}`
+        });
+      }
+      
+      const books = await Category.getBooks(id);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Libros de la categoría obtenidos con éxito',
+        data: books
+      });
+    } catch (error) {
+      console.error(`Error al obtener libros de la categoría con ID ${req.params.id}:`, error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener los libros de la categoría',
+        error: error.message
+      });
+    }
+  }
 }
 
 export default CategoryController;
