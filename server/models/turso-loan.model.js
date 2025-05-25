@@ -74,6 +74,44 @@ const TursoLoan = {
     `, [userId]);
     
     return result.rows || [];
+  },
+
+  /**
+   * Get overdue loans (not returned and past return date)
+   * @returns {Promise<Array>} - Overdue loans with details
+   */
+  async getOverdue() {
+    const result = await loanModel.raw(`
+      SELECT l.*,
+             u.name as user_name, u.email,
+             b.title as book_title, b.isbn,
+             a.first_name, a.last_name
+      FROM loans l
+      INNER JOIN users u ON l.user_id = u.user_id
+      INNER JOIN books b ON l.book_id = b.book_id
+      LEFT JOIN authors a ON b.author_id = a.author_id
+      WHERE l.actual_return_date IS NULL 
+        AND l.return_date < date('now')
+    `);
+    
+    return result.rows || [];
+  },
+
+  /**
+   * Mark a loan as returned
+   * @param {number} loanId - Loan ID
+   * @param {string} returnDate - Return date (optional, defaults to current date)
+   * @returns {Promise<boolean>} - Success status
+   */
+  async returnBook(loanId, returnDate = null) {
+    const actualReturnDate = returnDate || new Date().toISOString().split('T')[0];
+    
+    const result = await loanModel.update(loanId, {
+      actual_return_date: actualReturnDate,
+      status: 'returned'
+    });
+    
+    return result !== null;
   }
 };
 

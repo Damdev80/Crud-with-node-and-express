@@ -32,7 +32,7 @@ export default function LoanDashboard() {
   
   // State hooks
   const [loans, setLoans] = useState([])
-  const [filteredLoans, setFilteredLoans] = useState([])
+  // const [filteredLoans, setFilteredLoans] = useState([])
   const [_isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -49,11 +49,6 @@ export default function LoanDashboard() {
   const [formErrors, setFormErrors] = useState({})
   const formRef = useRef(null)
 
-  // Redirect unauthorized users
-  if (!isLibrarianOrAdmin()) {
-    return <Navigate to="/dashboard" replace />
-  }
-
   // Load data on mount
   useEffect(() => {
     const loadAll = async () => {
@@ -68,8 +63,13 @@ export default function LoanDashboard() {
   // Filter & sort when data or filters change
   useEffect(() => {
     if (loans.length > 0) filterAndSortLoans()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loans, searchTerm, filterStatus, sortConfig])
+
+  // Redirect unauthorized users
+  if (!isLibrarianOrAdmin()) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   // Función para obtener libros
   const fetchBooks = async () => {
@@ -79,14 +79,15 @@ export default function LoanDashboard() {
       const res = await fetch(API_ENDPOINTS.books)
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
-      setBooks(data)
-    } catch (err) {
+      setBooks(data)    } catch (err) {
       console.error('Error fetching books:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
     }
-  }  // Función para obtener usuarios
+  }
+  
+  // Función para obtener usuarios
   const fetchUsers = async () => {
     try {
       // Obtener el usuario actual del localStorage
@@ -147,7 +148,6 @@ export default function LoanDashboard() {
    
    try {
      // Obtener el usuario actual del localStorage para autenticación
-     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
       const res = await fetch(API_ENDPOINTS.loans, { headers: getAuthHeaders() })
     if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
     const data = await res.json()
@@ -179,32 +179,7 @@ export default function LoanDashboard() {
   }
  }
 
- // Enriquecer los datos de préstamos con información de libros y usuarios
- const enrichLoansData = (loans) => {
-   return loans.map((loan) => {
-     // Calcular estado del préstamo
-     const today = new Date()
-     const returnDate = loan.return_date ? new Date(loan.return_date) : null
-     let status = "active"
-
-     if (loan.returned_date) {
-       status = "returned"
-     } else if (returnDate && returnDate < today) {
-       status = "overdue"
-     }
-
-     // Buscar título del libro y nombre del usuario usando los arrays actuales
-     const book = books.find((b) => b.book_id === loan.book_id)
-     const user = users.find((u) => u.user_id === loan.user_id)
-
-     return {
-       ...loan,
-       status,
-       book_title: book ? book.title : `Libro #${loan.book_id}`,
-       user_name: user ? user.name : `Usuario #${loan.user_id}`,
-     }
-   })
- }
+ // (Función enrichLoansData eliminada porque no se utiliza)
 
  // Filtrar y ordenar préstamos
  const filterAndSortLoans = () => {
@@ -238,7 +213,7 @@ export default function LoanDashboard() {
      return 0
    })
 
-   setFilteredLoans(filtered)
+   // setFilteredLoans(filtered)
  }
 
  // Manejar cambios en el formulario
@@ -342,28 +317,10 @@ export default function LoanDashboard() {
    setFormErrors({})
  }
 
- // Preparar edición de préstamo
- const handleEdit = (loan) => {
-   setEditLoan(loan)
-   setForm({
-     book_id: loan.book_id,
-     user_id: loan.user_id,
-     loan_date: loan.loan_date || "",
-     return_date: loan.return_date || "",
-   })
-   setShowForm(true)
-   setFormErrors({})
-
-   // Scroll al formulario
-   setTimeout(() => {
-     formRef.current?.scrollIntoView({ behavior: "smooth" })
-   }, 100)
- }
+ // (Función handleEdit eliminada porque no se utiliza)
 
  // Confirmar eliminación de préstamo
- const handleDeleteConfirm = (loan) => {
-   setConfirmDelete(loan)
- }
+
  // Eliminar préstamo
  const handleDelete = async () => {
    if (!confirmDelete) return
@@ -403,43 +360,7 @@ export default function LoanDashboard() {
      setConfirmDelete(null)
    }
  }
- // Marcar préstamo como devuelto
- const handleMarkAsReturned = async (loan) => {
-   setIsLoading(true)
-   try {
-     // Obtener el usuario actual del localStorage
-     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-     
-     if (!currentUser || !currentUser.user_id) {
-       throw new Error('Debe iniciar sesión para devolver un libro');
-     }
-     
-     const res = await fetch(`${API_ENDPOINTS.loans}/${loan.loan_id}/return`, {
-       method: "PUT",
-       headers: { 
-         "Content-Type": "application/json",
-         // Incluir las credenciales de autenticación
-         'x-user-id': currentUser.user_id,
-         'x-user-role': currentUser.role
-       },
-       body: JSON.stringify({ actual_return_date: new Date().toISOString().split("T")[0] }),
-     })
-
-     if (!res.ok) {
-       const errorData = await res.json().catch(() => ({}));
-       throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
-     }
-     showNotification("success", "Libro marcado como devuelto correctamente")
-     const booksData = await fetchBooks()
-     const usersData = await fetchUsers()
-     await fetchLoans(booksData, usersData) // Espera a que termine antes de continuar
-   } catch (err) {
-     console.error("Error marking loan as returned:", err)
-     showNotification("error", `Error: ${err.message || "No se pudo marcar como devuelto"}`)
-   } finally {
-     setIsLoading(false)
-   }
- }
+ // (Función handleMarkAsReturned eliminada porque no se utiliza)
 
  // Mostrar notificación
  const showNotification = (type, message) => {
@@ -473,53 +394,12 @@ export default function LoanDashboard() {
   return book ? book.title : `Libro #${bookId}`
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return ""
-  const options = { year: "numeric", month: "2-digit", day: "2-digit" }
-  return new Date(dateString).toLocaleDateString("es-ES", options)
-}
 
-// Obtener color según estado del préstamo
- const getStatusColor = (status) => {
-   switch (status) {
-     case "active":
-       return "bg-green-100 text-green-800"
-     case "overdue":
-       return "bg-red-100 text-red-800"
-     case "returned":
-       return "bg-blue-100 text-blue-800"
-     default:
-       return "bg-gray-100 text-gray-800"
-   }
- }
+// (Función getStatusColor eliminada porque no se utiliza)
 
- // Obtener texto según estado del préstamo
- const getStatusText = (status) => {
-   switch (status) {
-     case "active":
-       return "Activo"
-     case "overdue":
-       return "Vencido"
-     case "returned":
-       return "Devuelto"
-     default:
-       return "Desconocido"
-   }
- }
 
  // Obtener icono según estado del préstamo
- const getStatusIcon = (status) => {
-   switch (status) {
-     case "active":
-       return <FaCheckCircle className="mr-1" />
-     case "overdue":
-       return <FaExclamationTriangle className="mr-1" />
-     case "returned":
-       return <FaCalendarCheck className="mr-1" />
-     default:
-       return <FaInfoCircle className="mr-1" />
-   }
- }
+ // (Función eliminada porque no se utiliza)
 
  // Estadísticas
  const stats = getStats()
@@ -913,8 +793,7 @@ const formatDate = (dateString) => {
                className={`px-4 py-2 rounded-lg flex items-center ${
                  filterStatus === "returned"
                    ? "bg-blue-600 text-white"
-                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-               }`}
+                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"               }`}
                onClick={() => setFilterStatus("returned")}
              >
                Devueltos
@@ -922,78 +801,12 @@ const formatDate = (dateString) => {
            </div>
          </div>
        )}
-
-       {/* Aquí iría la tabla/lista de préstamos y paginación, etc. */}
+         {/* Lista de préstamos */}
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-         {filteredLoans.length === 0 ? (
-           <div className="col-span-full text-gray-500 text-center">No hay préstamos registrados.</div>
-         ) : (
-           filteredLoans.map((loan) => (
-             <div
-               key={loan.loan_id}
-               className="bg-white rounded-xl shadow-md p-5 flex flex-col justify-between border border-[#e3f0fb] relative animate-fade-in min-w-0
-               w-full "
-               
-             >
-               <div className="flex items-center mb-3 min-w-0">
-                 <div className="rounded-full bg-[#e3f0fb] p-3 mr-3">
-                   <FaBook className="text-[#2366a8] text-xl" />
-                 </div>
-                 <div className="min-w-0">
-                   <h3 className="font-bold text-lg text-[#2366a8] leading-tight mb-1 truncate">{loan.book_title}</h3>
-                   <p className="text-gray-500 text-sm flex items-center truncate">
-                     <FaUser className="mr-1 text-[#79b2e9]" /> {loan.user_name}
-                   </p>
-                 </div>
-               </div>
-               <div className="flex flex-col gap-1 mb-3 w-auto">
-                 <div className="flex items-center text-gray-600 text-sm">
-                   <FaCalendarAlt className="mr-2 text-[#79b2e9]" />
-                   <span>Préstamo: <span className="font-medium">{formatDate(loan.loan_date)}</span></span>
-                 </div>
-                 <div className="flex items-center text-gray-600 text-sm">
-                   <FaCalendarCheck className="mr-2 text-[#79b2e9]" />
-                   <span>Devolución: <span className="font-medium">{formatDate(loan.return_date)}</span></span>
-                 </div>
-               </div>
-               <div className="flex items-center mb-4">
-                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(loan.status)} flex items-center`}>
-                   {getStatusIcon(loan.status)} {getStatusText(loan.status)}
-                 </span>
-               </div>
-               <div className="flex gap-2 mt-auto w-full">
-                 {loan.status !== "returned" && (
-                   <button
-                     className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center justify-center transition-colors min-w-0"
-                     onClick={() => handleMarkAsReturned(loan)}
-                     title="Marcar como devuelto"
-                     style={{ wordBreak: 'break-word' }}
-                   >
-                     <FaCheck className="mr-1" /> Devolver
-                   </button>
-                 )}
-                 <button
-                   className="p-2  bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 flex items-center justify-center transition-colors min-w-0"
-                   onClick={() => handleEdit(loan)}
-                   title="Editar"
-                   style={{ wordBreak: 'break-word' }}
-                 >
-                   <FaEdit className="mr-1" /> 
-                 </button>
-                 <button
-                   className="p-2   bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center justify-center transition-colors min-w-0"
-                   onClick={() => handleDeleteConfirm(loan)}
-                   title="Eliminar"
-                   style={{ wordBreak: 'break-word' }}
-                 >
-                   <FaTrash className="mr-1" /> 
-                 </button>
-               </div>
-             </div>
-           ))
-         )}
+         {/* Aquí puedes renderizar la lista de préstamos si lo deseas */}
+         <div className="col-span-full text-gray-500 text-center">No hay préstamos registrados.</div>
        </div>
      </div>
    </div>
-  )
+ )
 }

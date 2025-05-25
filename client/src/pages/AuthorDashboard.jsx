@@ -28,7 +28,7 @@ export default function AuthorDashboard() {
   const navigate = useNavigate()
 
   const [authors, setAuthors] = useState([])
-  const [filteredAuthors, setFilteredAuthors] = useState([])
+  const [_filteredAuthors, setFilteredAuthors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -200,23 +200,6 @@ export default function AuthorDashboard() {
     setFormErrors({});
   };
 
-  const handleEdit = (author) => {
-    setEditAuthor(author);
-    setForm({
-      first_name: author.first_name || "",
-      last_name: author.last_name || "",
-      birth_date: author.birth_date || "",
-      nationality: author.nationality || "",
-      biography: author.biography || "",
-    })
-    setShowForm(true)
-    setFormErrors({})
-  }
-
-  const confirmDelete = (author) => {
-    setAuthorToDelete(author);
-    setShowDeleteModal(true);
-  };
   
   const handleDelete = async () => {
     if (!authorToDelete) return;
@@ -246,26 +229,6 @@ export default function AuthorDashboard() {
     }, 3000)
   }
 
-  // Generar iniciales para avatar
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase()
-  }
-
-  // Generar color de fondo para avatar basado en nombre
-  const getAvatarColor = (name) => {
-    const colors = [
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-purple-500",
-      "bg-yellow-500",
-      "bg-pink-500",
-      "bg-indigo-500",
-      "bg-red-500",
-      "bg-teal-500",
-    ]
-    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    return colors[hash % colors.length]
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#e3f0fb] p-4 md:p-8">
@@ -542,10 +505,130 @@ export default function AuthorDashboard() {
               ) : (
                 <FaSort className="mr-2" />
               )}
-              Nacionalidad
-            </button>
+              Nacionalidad            </button>
           </div>
         </div>
+
+        {/* Lista de autores */}
+        {isLoading ? (
+          <div className="text-center py-12">
+            <FaSpinner className="animate-spin text-4xl text-[#2366a8] mx-auto mb-4" />
+            <p className="text-gray-600">Cargando autores...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <FaExclamationTriangle className="text-red-500 text-3xl mx-auto mb-4" />
+            <p className="text-red-700 mb-4">{error}</p>
+            <button
+              onClick={fetchAuthors}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : _filteredAuthors.length === 0 ? (
+          <div className="text-center py-12">
+            <FaBook className="text-gray-300 text-5xl mx-auto mb-4" />
+            <h3 className="text-xl font-medium text-gray-700 mb-2">No se encontraron autores</h3>
+            <p className="text-gray-500 mb-6">
+              {searchTerm ? "No hay autores que coincidan con tu búsqueda" : "Comienza añadiendo tu primer autor"}
+            </p>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="px-4 py-2 bg-[#2366a8] hover:bg-[#1d5a9a] text-white rounded-lg transition-colors"
+              >
+                Limpiar búsqueda
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {_filteredAuthors.map((author) => (
+              <motion.div
+                key={author.author_id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <div className="p-6">
+                  {/* Avatar */}
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#2366a8] to-[#79b2e9] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white font-bold text-lg">
+                      {`${author.first_name?.charAt(0) || ""}${author.last_name?.charAt(0) || ""}`.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Nombre */}
+                  <h3 className="text-xl font-bold text-[#2366a8] text-center mb-2">
+                    {author.first_name} {author.last_name}
+                  </h3>
+
+                  {/* Información adicional */}
+                  <div className="space-y-2 mb-4">
+                    {author.nationality && (
+                      <div className="flex items-center text-gray-600">
+                        <FaGlobe className="mr-2 text-[#79b2e9]" />
+                        <span className="text-sm">{author.nationality}</span>
+                      </div>
+                    )}
+                    {author.birth_date && (
+                      <div className="flex items-center text-gray-600">
+                        <FaBirthdayCake className="mr-2 text-[#79b2e9]" />
+                        <span className="text-sm">{new Date(author.birth_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center text-gray-600">
+                      <FaBook className="mr-2 text-[#79b2e9]" />
+                      <span className="text-sm">{author.book_count || 0} libro{author.book_count === 1 ? "" : "s"}</span>
+                    </div>
+                  </div>
+
+                  {/* Biografía */}
+                  {author.biography && (
+                    <p className="text-gray-600 text-sm line-clamp-3 mb-4">{author.biography}</p>
+                  )}
+
+                  {/* Botones de acción */}
+                  {isLibrarianOrAdmin() && (
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEditAuthor(author);
+                          setForm({
+                            first_name: author.first_name || "",
+                            last_name: author.last_name || "",
+                            birth_date: author.birth_date || "",
+                            nationality: author.nationality || "",
+                            biography: author.biography || "",
+                          })
+                          setShowForm(true)
+                          setFormErrors({})
+                        }}
+                        className="p-2 rounded-full bg-[#2366a8] hover:bg-[#1d5a9a] text-white transition-colors shadow"
+                        title="Editar autor"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAuthorToDelete(author);
+                          setShowDeleteModal(true);
+                        }}
+                        className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow"
+                        title="Eliminar autor"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
