@@ -18,7 +18,7 @@ const TursoEditorial = {
    * Get editorials with their books count
    * @returns {Promise<Array>} - Editorials with book count
    */
-  async getEditorialsWithBookCount() {
+  getEditorialsWithBookCount: async function() {
     const result = await editorialModel.raw(`
       SELECT e.*, COUNT(b.book_id) as book_count
       FROM editorials e
@@ -33,7 +33,7 @@ const TursoEditorial = {
    * @param {number} id - Editorial ID
    * @returns {Promise<Object|null>} - Editorial with books
    */
-  async getEditorialWithBooks(id) {
+  getEditorialWithBooks: async function(id) {
     // Get editorial details
     const editorial = await editorialModel.getById(id);
     if (!editorial) return null;

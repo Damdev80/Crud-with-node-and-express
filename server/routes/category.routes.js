@@ -1,8 +1,9 @@
 import express from 'express';
-import Category from '../models/category.model.js';
+import ModelFactory from '../models/model-factory.js';
 import { isAuthenticated, isLibrarianOrAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
+const Category = ModelFactory.Category;
 
 router.get('/', async (req, res) => {
   try {

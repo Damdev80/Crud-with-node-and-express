@@ -18,7 +18,7 @@ const TursoCategory = {
    * Get categories with their books count
    * @returns {Promise<Array>} - Categories with book count
    */
-  async getCategoriesWithBookCount() {
+  getCategoriesWithBookCount: async function() {
     const result = await categoryModel.raw(`
       SELECT c.*, COUNT(b.book_id) as book_count
       FROM categories c
@@ -33,7 +33,7 @@ const TursoCategory = {
    * @param {number} id - Category ID
    * @returns {Promise<Object|null>} - Category with books
    */
-  async getCategoryWithBooks(id) {
+  getCategoryWithBooks: async function(id) {
     // Get category details
     const category = await categoryModel.getById(id);
     if (!category) return null;

@@ -25,7 +25,7 @@ const TursoBook = {
    * Get books with author, category and editorial information
    * @returns {Promise<Array>} - Books with related data
    */
-  async getAllWithDetails() {
+  getAllWithDetails: async function() {
     const result = await bookModel.raw(`
       SELECT b.*, 
              a.first_name, a.last_name,
@@ -44,7 +44,7 @@ const TursoBook = {
    * @param {number} id - Book ID
    * @returns {Promise<Object|null>} - Book with related data
    */
-  async getByIdWithDetails(id) {
+  getByIdWithDetails: async function(id) {
     const result = await bookModel.raw(`
       SELECT b.*, 
              a.first_name, a.last_name,

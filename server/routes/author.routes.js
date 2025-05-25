@@ -1,8 +1,9 @@
 import express from 'express';
-import Author from '../models/author.model.js';
+import ModelFactory from '../models/model-factory.js';
 import { isAuthenticated, isLibrarianOrAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
+const Author = ModelFactory.Author;
 
 // Obtener todos los autores
 router.get('/', async (req, res) => {

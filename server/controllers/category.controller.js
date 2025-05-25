@@ -1,5 +1,7 @@
 // controllers/category.controller.js
-import Category from '../models/category.model.js';
+import ModelFactory from '../models/model-factory.js';
+
+const Category = ModelFactory.Category;
 
 // Controlador para categorías
 class CategoryController {

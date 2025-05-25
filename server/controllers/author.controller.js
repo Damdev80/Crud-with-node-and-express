@@ -1,5 +1,7 @@
 // controllers/author.controller.js
-import Author from '../models/author.model.js';
+import ModelFactory from '../models/model-factory.js';
+
+const Author = ModelFactory.Author;
 
 // Obtener todos los autores
 export const getAllAuthors = async (req, res) => {

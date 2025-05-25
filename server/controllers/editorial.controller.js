@@ -1,4 +1,6 @@
-import Editorial from '../models/editorial.model.js';
+import ModelFactory from '../models/model-factory.js';
+
+const Editorial = ModelFactory.Editorial;
 
 export const getAllEditorials = async (req, res) => {
   try {

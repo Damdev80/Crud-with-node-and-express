@@ -1,7 +1,9 @@
-import Book from '../models/book.model.js';
-import Author from '../models/author.model.js';
-import Category from '../models/category.model.js';
-import Editorial from '../models/editorial.model.js';
+import ModelFactory from '../models/model-factory.js';
+
+const Book = ModelFactory.Book;
+const Author = ModelFactory.Author;
+const Category = ModelFactory.Category;
+const Editorial = ModelFactory.Editorial;
 
 // Obtener todos los libros (con detalles)
 export const getAllBooks = async (req, res) => {

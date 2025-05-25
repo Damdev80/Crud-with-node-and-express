@@ -20,7 +20,7 @@ const TursoAuthor = {
    * Get authors with their books
    * @returns {Promise<Array>} - Authors with books count
    */
-  async getAuthorsWithBookCount() {
+  getAuthorsWithBookCount: async function() {
     const result = await authorModel.raw(`
       SELECT a.*, COUNT(b.book_id) as book_count
       FROM authors a
@@ -35,7 +35,7 @@ const TursoAuthor = {
    * @param {number} id - Author ID
    * @returns {Promise<Object|null>} - Author with books
    */
-  async getAuthorWithBooks(id) {
+  getAuthorWithBooks: async function(id) {
     // Get author details
     const author = await authorModel.getById(id);
     if (!author) return null;
