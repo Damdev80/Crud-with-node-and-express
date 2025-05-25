@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { BookOpen, Plus, Pencil, Trash2, Save, Search, AlertCircle, ArrowUpDown } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { API_ENDPOINTS } from '../config/api.js'
+import { getAuthHeaders } from '../utils/authHeaders.js'
 
 export default function EditorialDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
@@ -81,20 +82,18 @@ export default function EditorialDashboard() {
     if (!form.name.trim()) {
       setFormError("El nombre es obligatorio")
       return
-    }
-
-    try {
+    }    try {
       if (editEditorial) {
         await fetch(`${API_ENDPOINTS.editorials}/${editEditorial.editorial_id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify(form),
         })
         alert("Editorial actualizada correctamente.")
       } else {
         await fetch(API_ENDPOINTS.editorials, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify(form),
         })
         alert("Editorial creada correctamente.")
@@ -118,12 +117,14 @@ export default function EditorialDashboard() {
     setEditorialToDelete(id)
     setDeleteConfirmOpen(true)
   }
-
   const handleDelete = async () => {
     if (!editorialToDelete) return
 
     try {
-      await fetch(`${API_ENDPOINTS.editorials}/${editorialToDelete}`, { method: "DELETE" })
+      await fetch(`${API_ENDPOINTS.editorials}/${editorialToDelete}`, { 
+        method: "DELETE",
+        headers: getAuthHeaders()
+      })
       alert("Editorial eliminada correctamente.")
       fetchEditorials()
     } catch {

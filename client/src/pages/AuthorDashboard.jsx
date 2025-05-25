@@ -20,7 +20,8 @@ import {
 } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "../context/AuthContext"
-import { API_BASE_URL } from '../config/api.js';
+import { API_BASE_URL } from '../config/api.js'
+import { getAuthHeaders } from '../utils/authHeaders.js';
 
 export default function AuthorDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
@@ -157,21 +158,19 @@ export default function AuthorDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!validateForm()) return
-
-    setIsLoading(true)
+    if (!validateForm()) return    setIsLoading(true)
     try {
       if (editAuthor) {
         await fetch(`${API_BASE_URL}/api/authors/${editAuthor.author_id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify(form),
         })
         showNotification("success", "Autor actualizado correctamente")
       } else {
         await fetch(`${API_BASE_URL}/api/authors`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           body: JSON.stringify(form),
         })
         showNotification("success", "Autor añadido correctamente")
@@ -215,13 +214,15 @@ export default function AuthorDashboard() {
   const confirmDelete = (author) => {
     setAuthorToDelete(author)
     setShowDeleteModal(true)
-  }
-  const handleDelete = async () => {
+  }  const handleDelete = async () => {
     if (!authorToDelete) return
 
     setIsLoading(true)
     try {
-      await fetch(`${API_BASE_URL}/api/authors/${authorToDelete.author_id}`, { method: "DELETE" })
+      await fetch(`${API_BASE_URL}/api/authors/${authorToDelete.author_id}`, { 
+        method: "DELETE",
+        headers: getAuthHeaders()
+      })
       showNotification("success", "Autor eliminado correctamente")
       fetchAuthors()
     } catch (err) {

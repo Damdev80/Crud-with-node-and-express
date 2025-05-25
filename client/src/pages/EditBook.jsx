@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { FaBook, FaArrowLeft, FaExclamationTriangle, FaSave, FaTimes } from "react-icons/fa"
 import BookForm from "../components/BookForm"
 import { API_ENDPOINTS } from '../config/api.js'
+import { getAuthHeadersFormData } from '../utils/authHeaders.js'
 
 export default function EditBook() {
   const { id } = useParams()
@@ -59,10 +60,9 @@ export default function EditBook() {
         } else if (formData[key] !== null && formData[key] !== undefined) {
           data.append(key, formData[key])
         }
-      }
-
-      const response = await fetch(`${API_ENDPOINTS.books}/${id}`, {
+      }      const response = await fetch(`${API_ENDPOINTS.books}/${id}`, {
         method: "PUT",
+        headers: getAuthHeadersFormData(),
         body: data,
       })
 

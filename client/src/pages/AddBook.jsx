@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import BookForm from '../components/BookForm';
 import { API_BASE_URL } from '../config/api.js';
+import { getAuthHeadersFormData } from '../utils/authHeaders.js';
 
 export default function AddBook() {
   const [pageTransition, setPageTransition] = useState(true);
@@ -18,6 +19,7 @@ export default function AddBook() {
       formData.append(key, data[key]);
     }    await fetch(`${API_BASE_URL}/api/books/with-image`, {
       method: 'POST',
+      headers: getAuthHeadersFormData(),
       body: formData,
     });
     setShowSuccess(true);
