@@ -3,9 +3,13 @@ import ModelFactory from '../models/model-factory.js';
 // Listar préstamos
 export const getAllLoans = async (req, res) => {
   try {
+    console.log('🔍 [LOANS] DB_PROVIDER:', process.env.DB_PROVIDER);
+    console.log('🔍 [LOANS] Loan model type:', ModelFactory.Loan.constructor.name);
     const loans = await ModelFactory.Loan.getAllWithDetails();
+    console.log('🔍 [LOANS] Loans returned:', loans.length);
     res.json({ success: true, data: loans });
   } catch (error) {
+    console.error('❌ [LOANS] Error listing loans:', error);
     res.status(500).json({ success: false, message: 'Error al listar préstamos', error: error.message });
   }
 };
