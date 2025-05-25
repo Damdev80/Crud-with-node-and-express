@@ -78,7 +78,11 @@ app.post('/api/migrations/run', runMigration);
 
 // Health check para monitoreo
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'UP', 
+    timestamp: new Date().toISOString(),
+    version: '2.1-turso-fix'
+  });
 });
 
 // Debug endpoint para verificar variables de entorno
