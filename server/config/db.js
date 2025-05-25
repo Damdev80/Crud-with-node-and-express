@@ -5,7 +5,7 @@ const config = {
     user: 'root',
     password: '',
     database: 'library',
-    port: 5000,
+    port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306,
 }
 
 const pool = mysql.createPool(config);

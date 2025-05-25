@@ -1,8 +1,11 @@
 // server/models/model-factory.js
-import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+// Note: environment variables are loaded in app.js; no dotenv.config here
+
+// Determine directory
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('🏭 [MODEL-FACTORY] Initializing...');
 console.log('🏭 [MODEL-FACTORY] DB_PROVIDER from env:', process.env.DB_PROVIDER);

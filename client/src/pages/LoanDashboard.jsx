@@ -25,144 +25,143 @@ import {
 } from "react-icons/fa"
 import { useAuth } from "../context/AuthContext"
 import { Navigate } from "react-router-dom"
+import { getAuthHeaders } from '../utils/authHeaders.js';
 
 export default function LoanDashboard() {
-  const { isLibrarianOrAdmin } = useAuth();
-  
-  // Estados principales
-  const [loans, setLoans] = useState([])
-  const [filteredLoans, setFilteredLoans] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [editLoan, setEditLoan] = useState(null)
-  const [books, setBooks] = useState([])
-  const [users, setUsers] = useState([])
-  const [notification, setNotification] = useState({ show: false, type: "", message: "" })
-  const [confirmDelete, setConfirmDelete] = useState(null)
-  
-  // Redireccionar si no es bibliotecario o admin
-  if (!isLibrarianOrAdmin()) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  console.log('🔧 [LoanDashboard] loans endpoint:', API_ENDPOINTS.loans)
+   const { isLibrarianOrAdmin } = useAuth();
+   
+   // Estados principales
+   const [loans, setLoans] = useState([])
+   const [filteredLoans, setFilteredLoans] = useState([])
+   const [isLoading, setIsLoading] = useState(true)
+   const [error, setError] = useState(null)
+   const [showForm, setShowForm] = useState(false)
+   const [editLoan, setEditLoan] = useState(null)
+   const [books, setBooks] = useState([])
+   const [users, setUsers] = useState([])
+   const [notification, setNotification] = useState({ show: false, type: "", message: "" })
+   const [confirmDelete, setConfirmDelete] = useState(null)
+   
+   // Redireccionar si no es bibliotecario o admin
+   if (!isLibrarianOrAdmin()) {
+     return <Navigate to="/dashboard" replace />;
+   }
 
-  // Estados para filtros y ordenación
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [sortConfig, setSortConfig] = useState({ key: "loan_date", direction: "desc" })
-  const [showFilters, setShowFilters] = useState(false)
+   // Estados para filtros y ordenación
+   const [searchTerm, setSearchTerm] = useState("")
+   const [filterStatus, setFilterStatus] = useState("all")
+   const [sortConfig, setSortConfig] = useState({ key: "loan_date", direction: "desc" })
+   const [showFilters, setShowFilters] = useState(false)
 
-  // Estado del formulario con validación
-  const [form, setForm] = useState({
-    book_id: "",
-    user_id: "",
-    loan_date: "",
-    return_date: "",
-  })
-  const [formErrors, setFormErrors] = useState({})
+   // Estado del formulario con validación
+   const [form, setForm] = useState({
+     book_id: "",
+     user_id: "",
+     loan_date: "",
+     return_date: "",
+   })
+   const [formErrors, setFormErrors] = useState({})
 
-  // Referencia para el formulario (para scroll)
-  const formRef = useRef(null)
+   // Referencia para el formulario (para scroll)
+   const formRef = useRef(null)
 
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    // Cargar primero libros y usuarios, luego préstamos
-    const loadAll = async () => {
-      const booksData = await fetchBooks()
-      const usersData = await fetchUsers()
-      await fetchLoans(booksData, usersData)
-    }
-    loadAll()
-  }, [])
+   // Cargar datos al montar el componente
+   useEffect(() => {
+     // Cargar primero libros y usuarios, luego préstamos
+     const loadAll = async () => {
+       const booksData = await fetchBooks()
+       const usersData = await fetchUsers()
+       await fetchLoans(booksData, usersData)
+     }
+     loadAll()
+   }, [])
 
-  // Filtrar y ordenar préstamos cuando cambian los filtros
-  useEffect(() => {
-    if (loans.length > 0) {
-      filterAndSortLoans()
-    }
-  }, [loans, searchTerm, filterStatus, sortConfig])
+   // Filtrar y ordenar préstamos cuando cambian los filtros
+   useEffect(() => {
+     if (loans.length > 0) {
+       filterAndSortLoans()
+     }
+   }, [loans, searchTerm, filterStatus, sortConfig])
 
-  // Función para obtener libros
-  const fetchBooks = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_NODE_ENV === 'production' ? 'https://crud-with-node-and-express.onrender.com' : 'http://localhost:8000'}/api/books`)
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
-      const data = await res.json()
-      setBooks(data.data || [])
-      return data.data || []
-    } catch (err) {
-      console.error("Error fetching books:", err)
-      setBooks([])
-      return []
-    }
-  }  // Función para obtener usuarios
-  const fetchUsers = async () => {
-    try {
-      // Obtener el usuario actual del localStorage
-      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-      
-      if (!currentUser || !currentUser.user_id) {
-        console.error("Usuario no autenticado");
-        setNotification({
-          show: true,
-          type: "error",
-          message: "Debe iniciar sesión para ver la lista de usuarios"
-        });
-        return [];
-      }
-        const res = await fetch(API_ENDPOINTS.users, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Incluir las credenciales de autenticación
-          'x-user-id': currentUser.user_id,
-          'x-user-role': currentUser.role
-        }
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
-      }
-      
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setUsers(data.data);
-        console.log("Usuarios cargados:", data.data.length);
-        return data.data;
-      } else {
-        console.warn("Formato de respuesta inesperado:", data);
-        setUsers([]);
-        return [];
-      }
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setNotification({
-        show: true,
-        type: "error",
-        message: `Error al cargar usuarios: ${err.message}`
-      });
-      setUsers([]);
-      return [];
-    }
-  }
-  // Función para obtener préstamos (ahora recibe books/users)
-  const fetchLoans = async (booksArg = books, usersArg = users) => {
-    setIsLoading(true)
-    setError(null)
-    
-    // Verificación de depuración
-    console.log("Libros disponibles:", booksArg.length)
-    console.log("Usuarios disponibles:", usersArg.length)
-    
-    try {
-      // Obtener el usuario actual del localStorage para autenticación
-      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-        const res = await fetch(API_ENDPOINTS.loans, {
-        headers: {
-          'x-user-id': currentUser.user_id,
-          'x-user-role': currentUser.role
-        }
-      })
+   // Función para obtener libros
+   const fetchBooks = async () => {
+     setIsLoading(true)
+     setError(null)
+     try {
+       const res = await fetch(API_ENDPOINTS.books)
+       if (!res.ok) throw new Error(`Error ${res.status}`)
+       const data = await res.json()
+       setBooks(data)
+     } catch (err) {
+       console.error('Error fetching books:', err)
+       setError(err.message)
+     } finally {
+       setIsLoading(false)
+     }
+   }  // Función para obtener usuarios
+   const fetchUsers = async () => {
+     try {
+       // Obtener el usuario actual del localStorage
+       const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+       
+       if (!currentUser || !currentUser.user_id) {
+         console.error("Usuario no autenticado");
+         setNotification({
+           show: true,
+           type: "error",
+           message: "Debe iniciar sesión para ver la lista de usuarios"
+         });
+         return [];
+       }
+         const res = await fetch(API_ENDPOINTS.users, {
+         headers: {
+           'Content-Type': 'application/json',
+           // Incluir las credenciales de autenticación
+           'x-user-id': currentUser.user_id,
+           'x-user-role': currentUser.role
+         }
+       });
+       
+       if (!res.ok) {
+         const errorData = await res.json().catch(() => ({}));
+         throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+       }
+       
+       const data = await res.json();
+       if (data.success && Array.isArray(data.data)) {
+         setUsers(data.data);
+         console.log("Usuarios cargados:", data.data.length);
+         return data.data;
+       } else {
+         console.warn("Formato de respuesta inesperado:", data);
+         setUsers([]);
+         return [];
+       }
+     } catch (err) {
+       console.error("Error fetching users:", err);
+       setNotification({
+         show: true,
+         type: "error",
+         message: `Error al cargar usuarios: ${err.message}`
+       });
+       setUsers([]);
+       return [];
+     }
+   }
+   // Función para obtener préstamos (ahora recibe books/users)
+   const fetchLoans = async (booksArg = books, usersArg = users) => {
+     setIsLoading(true)
+     setError(null)
+     
+     // Verificación de depuración
+     console.log("Libros disponibles:", booksArg.length)
+     console.log("Usuarios disponibles:", usersArg.length)
+     
+     try {
+       // Obtener el usuario actual del localStorage para autenticación
+       const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+        const res = await fetch(API_ENDPOINTS.loans, { headers: getAuthHeaders() })
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data = await res.json()
       const loansArray = Array.isArray(data) ? data : data.data
@@ -320,12 +319,7 @@ export default function LoanDashboard() {
       } else {
         const res = await fetch(API_ENDPOINTS.loans, {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            // Incluir las credenciales de autenticación
-            'x-user-id': currentUser.user_id,
-            'x-user-role': currentUser.role
-          },
+          headers: { ...getAuthHeaders() },
           body: JSON.stringify(form),
         })
 
