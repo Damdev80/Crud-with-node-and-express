@@ -210,12 +210,11 @@ export default function AuthorDashboard() {
     setShowForm(true)
     setFormErrors({})
   }
+
   const confirmDelete = (author) => {
     setAuthorToDelete(author)
     setShowDeleteModal(true)
-  }
-
-  const handleDelete = async () => {
+  }  const handleDelete = async () => {
     if (!authorToDelete) return
 
     setIsLoading(true)
