@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { API_ENDPOINTS } from '../config/api.js'
 import {
@@ -24,38 +22,34 @@ import {
   FaCheck,
 } from "react-icons/fa"
 import { useAuth } from "../context/AuthContext"
-import { Navigate } from "react-router-dom"
+import { Navigate, useNavigate } from "react-router-dom"
 import { getAuthHeaders } from '../utils/authHeaders.js';
 
 export default function LoanDashboard() {
   console.log('🔧 [LoanDashboard] loans endpoint:', API_ENDPOINTS.loans)
-   const { isLibrarianOrAdmin } = useAuth();
-   
-   // Estados principales
-   const [loans, setLoans] = useState([])
-   const [filteredLoans, setFilteredLoans] = useState([])
-   const [isLoading, setIsLoading] = useState(true)
-   const [error, setError] = useState(null)
-   const [showForm, setShowForm] = useState(false)
-   const [editLoan, setEditLoan] = useState(null)
-   const [books, setBooks] = useState([])
-   const [users, setUsers] = useState([])
-   const [notification, setNotification] = useState({ show: false, type: "", message: "" })
-   const [confirmDelete, setConfirmDelete] = useState(null)
-   
-   // Redireccionar si no es bibliotecario o admin
-   if (!isLibrarianOrAdmin()) {
-     return <Navigate to="/dashboard" replace />;
-   }
+  const { isLibrarianOrAdmin } = useAuth()
+  const navigate = useNavigate()
+    
+    // Estados principales
+    const [loans, setLoans] = useState([])
+    const [filteredLoans, setFilteredLoans] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [showForm, setShowForm] = useState(false)
+    const [editLoan, setEditLoan] = useState(null)
+    const [books, setBooks] = useState([])
+    const [users, setUsers] = useState([])
+    const [notification, setNotification] = useState({ show: false, type: "", message: "" })
+    const [confirmDelete, setConfirmDelete] = useState(null)
+    
+    // Estados para filtros y ordenación
+    const [searchTerm, setSearchTerm] = useState("")
+    const [filterStatus, setFilterStatus] = useState("all")
+    const [sortConfig, setSortConfig] = useState({ key: "loan_date", direction: "desc" })
+    const [showFilters, setShowFilters] = useState(false)
 
-   // Estados para filtros y ordenación
-   const [searchTerm, setSearchTerm] = useState("")
-   const [filterStatus, setFilterStatus] = useState("all")
-   const [sortConfig, setSortConfig] = useState({ key: "loan_date", direction: "desc" })
-   const [showFilters, setShowFilters] = useState(false)
-
-   // Estado del formulario con validación
-   const [form, setForm] = useState({
+    // Estado del formulario con validación
+    const [form, setForm] = useState({
      book_id: "",
      user_id: "",
      loan_date: "",
@@ -615,7 +609,7 @@ export default function LoanDashboard() {
           <button
             className="flex items-center bg-gradient-to-r from-[#79b2e9] to-[#2366a8] hover:from-[#5a9de0] hover:to-[#1d5a9a] text-white px-4 py-2 rounded-lg shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
             type="button"
-            onClick={() => window.location.replace('/dashboard')}
+            onClick={() => navigate('/dashboard')}
           >
             <span className="mr-2">←</span> Volver al Dashboard
           </button>

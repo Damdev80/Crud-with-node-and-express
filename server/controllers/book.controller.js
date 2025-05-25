@@ -55,26 +55,48 @@ export const getBookById = async (req, res) => {
 // Crear libro
 export const createBook = async (req, res) => {
   try {
-    // Recibe nombres en vez de IDs
-    const { title, description, publication_date, author_name, category_name, editorial_name, publication_year, isbn, available_copies } = req.body;
-    const coverImagePath = req.file ? req.file.filename : null;
-
-    // Buscar o crear autor, categoría y editorial
-    const author = await Author.findOrCreateByName(author_name);
-    const category = await Category.findOrCreateByName(category_name);
-    const editorial = editorial_name ? await Editorial.findOrCreateByName(editorial_name) : null;
-
-    // Crear el libro con los IDs obtenidos
-    const newBook = await Book.create({
+    // Accept either IDs or names from the frontend
+    const {
       title,
       description,
-      publication_date,
       publication_year,
       isbn,
       available_copies,
-      author_id: author.author_id,
-      category_id: category.category_id,
-      editorial_id: editorial ? editorial.editorial_id : null,
+      author_id,
+      category_id,
+      editorial_id
+    } = req.body;
+    const coverImagePath = req.file ? req.file.filename : null;
+
+    // Determine author ID
+    let authId = author_id;
+    if (!authId && req.body.author_name) {
+      const author = await Author.findOrCreateByName(req.body.author_name);
+      authId = author.author_id;
+    }
+    // Determine category ID
+    let catId = category_id;
+    if (!catId && req.body.category_name) {
+      const category = await Category.findOrCreateByName(req.body.category_name);
+      catId = category.category_id;
+    }
+    // Determine editorial ID
+    let edId = editorial_id;
+    if (!edId && req.body.editorial_name) {
+      const editorial = await Editorial.findOrCreateByName(req.body.editorial_name);
+      edId = editorial.editorial_id;
+    }
+
+    // Create the book record
+    const newBook = await Book.create({
+      title,
+      description,
+      publication_year,
+      isbn,
+      available_copies,
+      author_id: authId,
+      category_id: catId,
+      editorial_id: edId || null,
       cover_image: coverImagePath,
     });
 

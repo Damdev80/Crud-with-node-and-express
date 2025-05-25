@@ -1,6 +1,7 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api.js';
 import { getAuthHeaders } from '../utils/authHeaders.js';
 import {
@@ -20,11 +21,12 @@ import {
   FaCheck,
   FaSpinner,
 } from "react-icons/fa"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion" // eslint-disable-line no-unused-vars
 
 export default function AuthorDashboard() {
-  const { isLibrarianOrAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { isLibrarianOrAdmin } = useAuth()
+  const navigate = useNavigate()
+
   const [authors, setAuthors] = useState([])
   const [filteredAuthors, setFilteredAuthors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -542,104 +544,7 @@ export default function AuthorDashboard() {
               )}
               Nacionalidad
             </button>
-            <button
-              className={`px-4 py-2 rounded-lg flex items-center ${
-                sortConfig.key === "book_count"
-                  ? "bg-[#2366a8] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-              onClick={() => handleSort("book_count")}
-            >
-              {sortConfig.key === "book_count" && sortConfig.direction === "asc" ? (
-                <FaSortAlphaDown className="mr-2" />
-              ) : sortConfig.key === "book_count" && sortConfig.direction === "desc" ? (
-                <FaSortAlphaUp className="mr-2" />
-              ) : (
-                <FaSort className="mr-2" />
-              )}
-              Libros
-            </button>
           </div>
-        </div>
-
-        {/* Grid de autores como cards visuales */}
-        <div className="">
-          {isLoading ? (
-            <div className="py-4 text-center">
-              <FaSpinner className="animate-spin text-[#2366a8] h-6 w-6 mx-auto" />
-            </div>
-          ) : error ? (
-            <div className="py-4 text-center text-red-500">
-              <FaExclamationTriangle className="inline-block mr-2" />
-              {error}
-            </div>
-          ) : filteredAuthors.length === 0 ? (
-            <div className="py-4 text-center text-gray-500">
-              <FaBook className="inline-block mb-2" />
-              No se encontraron autores que coincidan con tu búsqueda.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredAuthors.map((author) => (
-                <motion.div
-                  key={author.author_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="relative bg-[#fff] rounded-2xl shadow-lg p-6 flex flex-col justify-between min-h-[260px]"
-                >
-                  <div className="flex items-center mb-4">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 text-xl font-bold ${getAvatarColor(
-                        (author.first_name || "") + (author.last_name || "")
-                      )}`}
-                    >
-                      <span className="text-white">
-                        {getInitials(author.first_name, author.last_name)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-[#2366a8]">
-                        {author.first_name} {author.last_name}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <FaGlobe className="mr-1" />
-                        {author.nationality || "-"}
-                      </div>
-                    </div>
-                  </div>                  <div className="flex-1 mb-4">
-                    <div className="text-gray-700 text-sm line-clamp-3 mb-2">
-                      {author.biography ? author.biography : <span className="italic text-gray-400">Sin biografía</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-center text-[#2366a8] font-medium">
-                      <FaBook className="mr-1" />
-                      {author.book_count || 0} libro{author.book_count === 1 ? "" : "s"}
-                    </div>
-                    {isLibrarianOrAdmin() && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(author)}
-                          className="p-2 rounded-full bg-[#2366a8] hover:bg-[#1d5a9a] text-white transition-colors shadow"
-                          title="Editar autor"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(author)}
-                          className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow"
-                          title="Eliminar autor"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
