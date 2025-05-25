@@ -51,6 +51,38 @@ const TursoEditorial = {
       ...editorial,
       books: result.rows || []
     };
+  },
+  
+  /**
+   * Find or create editorial by name
+   * @param {string} name - Editorial name
+   * @returns {Promise<Object|null>} - Editorial record or null if name is empty
+   */
+  findOrCreateByName: async function(name) {
+    try {
+      if (!name) return null;
+      
+      // Search for existing editorial
+      const result = await editorialModel.raw(`
+        SELECT * FROM editorials WHERE name = ?
+      `, [name]);
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0];
+      }
+      
+      // If not exists, create it
+      const editorialData = { 
+        name,
+        description: null
+      };
+      
+      const created = await editorialModel.create(editorialData);
+      return created;
+    } catch (error) {
+      console.error('Error in findOrCreateByName:', error);
+      throw error;
+    }
   }
 };
 

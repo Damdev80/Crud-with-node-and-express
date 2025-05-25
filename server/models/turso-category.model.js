@@ -51,6 +51,36 @@ const TursoCategory = {
       ...category,
       books: result.rows || []
     };
+  },
+  
+  /**
+   * Find or create category by name
+   * @param {string} name - Category name
+   * @returns {Promise<Object>} - Category record
+   */
+  findOrCreateByName: async function(name) {
+    try {
+      // Search for existing category
+      const result = await categoryModel.raw(`
+        SELECT * FROM categories WHERE name = ?
+      `, [name]);
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0];
+      }
+      
+      // If not exists, create it with empty description
+      const categoryData = { 
+        name, 
+        description: '' 
+      };
+      
+      const created = await categoryModel.create(categoryData);
+      return created;
+    } catch (error) {
+      console.error('Error in findOrCreateByName:', error);
+      throw error;
+    }
   }
 };
 

@@ -54,6 +54,43 @@ const TursoAuthor = {
       ...author,
       books: result.rows || []
     };
+  },
+  
+  /**
+   * Find or create author by full name
+   * @param {string} fullName - Full name of the author
+   * @returns {Promise<Object>} - Author record
+   */
+  findOrCreateByName: async function(fullName) {
+    try {
+      // Separar en nombre y apellido (simple, asume 2 palabras)
+      const [first_name, ...rest] = fullName.trim().split(' ');
+      const last_name = rest.join(' ');
+      
+      // Search for existing author
+      const result = await authorModel.raw(`
+        SELECT * FROM authors 
+        WHERE first_name = ? AND last_name = ?
+      `, [first_name, last_name]);
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0];
+      }
+      
+      // If not exists, create it with minimal data
+      const authorData = { 
+        first_name, 
+        last_name, 
+        birth_date: null, 
+        nationality: null 
+      };
+      
+      const created = await authorModel.create(authorData);
+      return created;
+    } catch (error) {
+      console.error('Error in findOrCreateByName:', error);
+      throw error;
+    }
   }
 };
 
