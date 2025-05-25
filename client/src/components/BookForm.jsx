@@ -31,29 +31,22 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const [imagePreview, setImagePreview] = useState(initialImagePreview)
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   // Declarar validateForm ANTES de los useEffect para evitar ReferenceError
   const validateForm = useCallback(() => {
     const newErrors = {}
     // Validación de título
     if (!form.title.trim()) newErrors.title = "El título es obligatorio"
-    // Validación de autor (solo letras, espacios y acentos)
-    if (typeof form.author_id !== "string" || !form.author_id.trim()) {
+    // Validación de autor (debe ser un ID numérico)
+    if (!form.author_id) {
       newErrors.author_id = "El autor es obligatorio"
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.author_id.trim())) {
-      newErrors.author_id = "El autor solo puede contener letras y espacios"
     }
-    // Validación de categoría (solo letras, espacios y acentos)
-    if (typeof form.category_id !== "string" || !form.category_id.trim()) {
+    // Validación de categoría (debe ser un ID numérico)
+    if (!form.category_id) {
       newErrors.category_id = "La categoría es obligatoria"
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.category_id.trim())) {
-      newErrors.category_id = "La categoría solo puede contener letras y espacios"
     }
-    // Validación de editorial (solo letras, espacios y acentos)
-    if (typeof form.editorial_id !== "string" || !form.editorial_id.trim()) {
+    // Validación de editorial (debe ser un ID numérico)
+    if (!form.editorial_id) {
       newErrors.editorial_id = "La editorial es obligatoria"
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]+$/.test(form.editorial_id.trim())) {
-      newErrors.editorial_id = "La editorial solo puede contener letras y espacios"
     }
 
     if (form.publication_year) {
@@ -86,21 +79,20 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   useEffect(() => {
     validateForm()
   }, [form, validateForm])
-
   // Si el libro viene de la API para editar, puede que los campos sean distintos
   useEffect(() => {
     if (initialData && initialData.book_id) {
       setForm({
         title: initialData.title || "",
-        author_id: initialData.author?.name || initialData.author || initialData.author_id || "",
-        category_id: initialData.category?.name || initialData.category || initialData.category_id || "",
-        editorial_id: initialData.editorial?.name || initialData.editorial || initialData.editorial_id || "",
+        author_id: initialData.author_id || "",
+        category_id: initialData.category_id || "",
+        editorial_id: initialData.editorial_id || "",
         publication_year: initialData.publication_year || "",
         isbn: initialData.isbn || "",
         available_copies: initialData.available_copies || "",
         description: initialData.description || "",
         cover_image: null, // No sobrescribir la imagen existente
-      });      setImagePreview(
+      });setImagePreview(
         initialData.cover_image
           ? (initialData.cover_image.startsWith('http')
               ? initialData.cover_image
@@ -176,19 +168,9 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!validateForm()) return
-
-    setIsSubmitting(true)
+    if (!validateForm()) return    setIsSubmitting(true)
     try {
-      let dataToSend = {
-        ...form,
-        author_name: form.author_id,
-        category_name: form.category_id,
-        editorial_name: form.editorial_id,
-      };
-      delete dataToSend.author_id;
-      delete dataToSend.category_id;
-      delete dataToSend.editorial_id;
+      let dataToSend = { ...form };
 
       // Si no se seleccionó una nueva imagen, eliminar cover_image para no sobreescribir
       if (!form.cover_image) {
@@ -281,8 +263,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           <div>
             <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Autor <span className="text-red-500">*</span>
-            </label>
-            <select
+            </label>            <select
               name="author_id"
               value={form.author_id}
               onChange={handleChange}
@@ -291,7 +272,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             >
               <option value="">Selecciona un autor</option>
               {authors.map(author => (
-                <option key={author.author_id || author.id} value={author.name || author.first_name || author.last_name || author.id || author.author_id}>
+                <option key={author.author_id || author.id} value={author.author_id || author.id}>
                   {author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim()}
                 </option>
               ))}
@@ -302,8 +283,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           <div>
             <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Categoría <span className="text-red-500">*</span>
-            </label>
-            <select
+            </label>            <select
               name="category_id"
               value={form.category_id}
               onChange={handleChange}
@@ -312,7 +292,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             >
               <option value="">Selecciona una categoría</option>
               {categories.map(cat => (
-                <option key={cat.category_id || cat.id} value={cat.name}>
+                <option key={cat.category_id || cat.id} value={cat.category_id || cat.id}>
                   {cat.name}
                 </option>
               ))}
@@ -323,8 +303,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
           <div>
             <label className="block text-sm font-medium text-[#2366a8] mb-1">
               Editorial <span className="text-red-500">*</span>
-            </label>
-            <select
+            </label>            <select
               name="editorial_id"
               value={form.editorial_id || ''}
               onChange={handleChange}
@@ -333,7 +312,7 @@ const BookForm = ({ onSubmit, onCancel, initialData = {} }) => {
             >
               <option value="">Selecciona una editorial</option>
               {editorials.map(ed => (
-                <option key={ed.editorial_id || ed.id} value={ed.name}>
+                <option key={ed.editorial_id || ed.id} value={ed.editorial_id || ed.id}>
                   {ed.name}
                 </option>
               ))}

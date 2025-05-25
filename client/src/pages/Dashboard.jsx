@@ -78,35 +78,54 @@ const Dashboard = () => {
       calculateStats()
     }
   }, [books, searchTerm, selectedCategory, selectedAuthor])
-
-  // Actualizar autores y préstamos cada vez que se agregue/borre un libro o autor
+  // Actualizar autores, categorías y préstamos cada vez que se agregue/borre un libro o autor
   useEffect(() => {
-    // Obtener categorías
-    getCategories().then(setCategories).catch(() => setCategories([])); 
+    // Obtener categorías y actualizar stats
+    const updateCategories = async () => {
+      try {
+        const data = await getCategories();
+        // Si la respuesta es { success, data }
+        const categoriesArr = Array.isArray(data) ? data : data.data;
+        setCategories(categoriesArr || []);
+        setStats((prev) => ({ ...prev, categories: (categoriesArr || []).length }));
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+        setStats((prev) => ({ ...prev, categories: 0 }));
+      }
+    };
+    
     // Obtener autores y actualizar stats
     const updateAuthors = async () => {
       try {
         const data = await getAuthors();
         // Si la respuesta es { success, data }
         const authorsArr = Array.isArray(data) ? data : data.data;
-        setAuthors(authorsArr);
-        setStats((prev) => ({ ...prev, authors: authorsArr.length }));
-      } catch {
+        setAuthors(authorsArr || []);
+        setStats((prev) => ({ ...prev, authors: (authorsArr || []).length }));
+      } catch (error) {
+        console.error('Error fetching authors:', error);
         setAuthors([]);
         setStats((prev) => ({ ...prev, authors: 0 }));
       }
     };
-    updateAuthors();
+
     // Obtener préstamos y actualizar stats
-    getLoans()
-      .then((loansData) => {
+    const updateLoans = async () => {
+      try {
+        const loansData = await getLoans();
         setLoans(loansData || []);
-        setStats((prev) => ({ ...prev, loans: loansData.length }));
-      })
-      .catch(() => {
+        setStats((prev) => ({ ...prev, loans: (loansData || []).length }));
+      } catch (error) {
+        console.error('Error fetching loans:', error);
         setLoans([]);
         setStats((prev) => ({ ...prev, loans: 0 }));
-      });
+      }
+    };
+
+    updateCategories();
+    updateAuthors();
+    updateLoans();
   }, [books]);
 
   const fetchBooks = async () => {
@@ -256,22 +275,11 @@ const Dashboard = () => {
 
     setFilteredBooks(result)
   }
-
   const calculateStats = () => {
-    // Calcular estadísticas básicas
+    // Calcular estadísticas básicas de libros
     const totalBooks = books.length;
     const availableBooks = books.filter((book) => book.available_copies > 0).length;
-    const uniqueCategories = new Set(books.map((book) => book.category_id));
-    const uniqueAuthors = new Set(
-      books
-        .map((book) => {
-          if (!book.author) return null;
-          if (typeof book.author === 'string') return book.author.trim();
-          if (typeof book.author === 'object' && book.author.name) return book.author.name.trim();
-          return null;
-        })
-        .filter(Boolean)
-    );
+    
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
     const recentlyAdded = books.filter((book) => {
@@ -298,17 +306,13 @@ const Dashboard = () => {
       const mostRentedBookId = Object.keys(loanCounts).reduce((a, b) => loanCounts[a] > loanCounts[b] ? a : b);
       mostRented = books.find((b) => String(b.book_id) === String(mostRentedBookId));
       if (mostRented) mostRented.rentCount = loanCounts[mostRentedBookId];
-    }
-
-    setStats({
+    }    setStats((prevStats) => ({
+      ...prevStats, // Mantener authors, categories, loans que se actualizan en otros useEffect
       totalBooks,
       availableBooks,
-      categories: uniqueCategories.size,
-      authors: uniqueAuthors.size,
       recentlyAdded,
       mostViewed: mostRented, // Cambiado a mostRented
-      loans: loans.length,
-    });
+    }));
   }
 
   const handleSearch = (e) => {

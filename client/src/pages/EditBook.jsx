@@ -197,16 +197,15 @@ export default function EditBook() {
                 <div className="mb-6 pb-4 border-b border-gray-200">
                   <h2 className="text-2xl font-bold text-[#2366a8]">{book.title}</h2>
                   {book.author && <p className="text-[#17406a]">por {book.author.name}</p>}
-                </div>
-
-                <BookForm
+                </div>                <BookForm
                   onSubmit={handleEdit}
                   onCancel={handleCancel}
                   initialData={{
                     ...book,
                     id: book.book_id,
-                    author_id: book.author?.name || book.author_id || '',
-                    category_id: book.category?.name || book.category_id || ''
+                    author_id: book.author_id || '',
+                    category_id: book.category_id || '',
+                    editorial_id: book.editorial_id || ''
                   }}
                   isSubmitting={isSaving}
                 />
