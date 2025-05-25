@@ -1,6 +1,8 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api.js';
+import { getAuthHeaders } from '../utils/authHeaders.js';
 import {
   FaUserEdit,
   FaPlus,
@@ -19,10 +21,6 @@ import {
   FaSpinner,
 } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from '../config/api.js'
-import { getAuthHeaders } from '../utils/authHeaders.js';
 
 export default function AuthorDashboard() {
   const { isLibrarianOrAdmin } = useAuth();
