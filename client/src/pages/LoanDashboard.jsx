@@ -152,15 +152,20 @@ export default function LoanDashboard() {
    setIsLoading(true)
    setError(null)
    
-   // Verificación de depuración
-   console.log("Libros disponibles:", booksArg.length)
-   console.log("Usuarios disponibles:", usersArg.length)
-     try {
+   // Asegurar que tenemos arrays válidos
+   const validBooks = Array.isArray(booksArg) ? booksArg : [];
+   const validUsers = Array.isArray(usersArg) ? usersArg : [];
+   
+   console.log("📚 [LOANS] Libros disponibles:", validBooks.length)
+   console.log("👥 [LOANS] Usuarios disponibles:", validUsers.length)
+   
+   try {
      // Obtener el usuario actual del localStorage para autenticación
      const res = await fetch(API_ENDPOINTS.loans, { headers: getAuthHeaders() })
      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
      const data = await res.json()
-       console.log("Respuesta de API loans:", data)
+     
+     console.log("🔍 [LOANS] Respuesta de API loans:", data)
      
      // Manejar tanto respuestas con estructura {success, data} como arrays directos
      let loansArray;
@@ -172,32 +177,35 @@ export default function LoanDashboard() {
        console.warn("Respuesta inesperada de la API de préstamos:", data)
        throw new Error("Respuesta inesperada de la API de préstamos")
      }
-    // Enriquecer los datos con los arrays recibidos
-    const enrichedLoans = loansArray.map((loan) => {
-      const today = new Date()
-      const returnDate = loan.return_date ? new Date(loan.return_date) : null
-      let status = "active"
-      if (loan.actual_return_date) status = "returned"
-      else if (returnDate && returnDate < today) status = "overdue"
-      const book = booksArg.find((b) => b.book_id === loan.book_id)
-      const user = usersArg.find((u) => u.user_id === loan.user_id)
-      return {
-        ...loan,
-        status,
-        book_title: book ? book.title : `Libro #${loan.book_id}`,
-        user_name: user ? user.name : `Usuario #${loan.user_id}`,
-      }
-    })
-    console.log("Préstamos enriquecidos:", enrichedLoans)
-    setLoans(enrichedLoans)
-    console.log("🔍 [LOANS] Estado de loans después de setLoans:", enrichedLoans.length)
-    // No llamar filterAndSortLoans aquí, el useEffect se encargará cuando loans cambie
-  } catch (err) {
-    console.error("Error fetching loans:", err)
-    setError(err.message || "Error al cargar los préstamos")
-  } finally {
-    setIsLoading(false)
-  }
+
+     // Enriquecer los datos con los arrays validados
+     const enrichedLoans = loansArray.map((loan) => {
+       const today = new Date()
+       const returnDate = loan.return_date ? new Date(loan.return_date) : null
+       let status = "active"
+       if (loan.actual_return_date) status = "returned"
+       else if (returnDate && returnDate < today) status = "overdue"
+       
+       const book = validBooks.find((b) => b.book_id === loan.book_id)
+       const user = validUsers.find((u) => u.user_id === loan.user_id)
+       
+       return {
+         ...loan,
+         status,
+         book_title: book ? book.title : `Libro #${loan.book_id}`,
+         user_name: user ? user.name : `Usuario #${loan.user_id}`,
+       }
+     })
+     
+     console.log("✅ [LOANS] Préstamos enriquecidos:", enrichedLoans)
+     setLoans(enrichedLoans)
+     
+   } catch (err) {
+     console.error("❌ [LOANS] Error fetching loans:", err)
+     setError(err.message || "Error al cargar los préstamos")
+   } finally {
+     setIsLoading(false)
+   }
  }
 
  // (Función enrichLoansData eliminada porque no se utiliza) // Filtrar y ordenar préstamos
