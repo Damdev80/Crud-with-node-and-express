@@ -4,6 +4,12 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Determine __dirname for ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, process.env.NODE_ENV === 'development' ? '.env.development' : '.env') });
+
 // Apply temporary environment fix for production
 import './temp-env-fix.js';
 
@@ -17,12 +23,6 @@ import userRoutes from './routes/user.routes.js';
 import editorialRoutes from './routes/editorial.routes.js';
 import { processUser } from './middlewares/auth.js';
 import { runMigration } from './migrations/migrate-controller.js';
-
-// Determine __dirname for ESM
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, process.env.NODE_ENV === 'development' ? '.env.development' : '.env') });
 
 const app = express();
 
