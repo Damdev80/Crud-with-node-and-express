@@ -20,6 +20,7 @@ import {
   FaArrowLeft,
   FaTimes,
   FaCheck,
+  FaUndo,
 } from "react-icons/fa"
 import { useAuth } from "../context/AuthContext"
 import { getAuthHeaders } from '../utils/authHeaders.js';
@@ -27,8 +28,7 @@ import { getAuthHeaders } from '../utils/authHeaders.js';
 export default function LoanDashboard() {
   // Auth & routing hooks
   const { isLibrarianOrAdmin } = useAuth()
-  const navigate = useNavigate()
-    // State hooks
+  const navigate = useNavigate()    // State hooks
   const [loans, setLoans] = useState([])
   const [filteredLoans, setFilteredLoans] = useState([])
   const [_isLoading, setIsLoading] = useState(true)
@@ -39,13 +39,25 @@ export default function LoanDashboard() {
   const [users, setUsers] = useState([])
   const [notification, setNotification] = useState({ show: false, type: "", message: "" })
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [confirmReturn, setConfirmReturn] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [sortConfig, setSortConfig] = useState({ key: "loan_date", direction: "desc" })
   const [showFilters, setShowFilters] = useState(false)
   const [form, setForm] = useState({ book_id: "", user_id: "", loan_date: "", return_date: "" })
   const [formErrors, setFormErrors] = useState({})
-  const formRef = useRef(null)  // Load data on mount
+  const formRef = useRef(null)
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loansPerPage] = useState(10) // 10 préstamos por página
+  
+  // Calcular paginación
+  const totalPages = Math.ceil(filteredLoans.length / loansPerPage)
+  const paginatedLoans = filteredLoans.slice(
+    (currentPage - 1) * loansPerPage,
+    currentPage * loansPerPage
+  )// Load data on mount
   useEffect(() => {
     const loadAll = async () => {
       console.log("🔄 [LOAD] Iniciando carga de datos...")
@@ -291,16 +303,17 @@ export default function LoanDashboard() {
 
      if (aValue < bValue) {
        return sortConfig.direction === "asc" ? -1 : 1
-     }
-     if (aValue > bValue) {
+     }     if (aValue > bValue) {
        return sortConfig.direction === "asc" ? 1 : -1
      }
      return 0
-   })
+   });
 
    console.log("🔍 [FILTER] Resultado final:", filtered.length)
    setFilteredLoans(filtered)
    console.log("🔍 [FILTER] Estado filteredLoans actualizado")
+   // Resetear a la primera página cuando cambian los filtros
+   setCurrentPage(1)
    return filtered
  }
 
@@ -457,9 +470,48 @@ export default function LoanDashboard() {
    } finally {
      setIsLoading(false)
      setConfirmDelete(null)
+   } }
+ 
+ // Manejar devolución de libro
+ const handleReturnBook = async () => {
+   if (!confirmReturn) return
+
+   setIsLoading(true)
+   try {
+     // Obtener el usuario actual del localStorage
+     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+     
+     if (!currentUser || !currentUser.user_id) {
+       throw new Error('Debe iniciar sesión para devolver un préstamo');
+     }
+     
+     const res = await fetch(`${API_ENDPOINTS.loans}/${confirmReturn.loan_id}/return`, { 
+       method: "PUT",
+       headers: {
+         'Content-Type': 'application/json',
+         // Incluir las credenciales de autenticación
+         'x-user-id': currentUser.user_id,
+         'x-user-role': currentUser.role
+       }
+     })
+     
+     if (!res.ok) {
+       const errorData = await res.json().catch(() => ({}));
+       throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
+     }
+
+     showNotification("success", "Libro devuelto correctamente")
+     const booksData = await fetchBooks()
+     const usersData = await fetchUsers()
+     await fetchLoans(booksData, usersData) // Espera a que termine antes de continuar
+   } catch (err) {
+     console.error("Error returning book:", err)
+     showNotification("error", `Error: ${err.message || "No se pudo devolver el libro"}`)
+   } finally {
+     setIsLoading(false)
+     setConfirmReturn(null)
    }
  }
- // (Función handleMarkAsReturned eliminada porque no se utiliza)
 
  // Mostrar notificación
  const showNotification = (type, message) => {
@@ -545,6 +597,39 @@ export default function LoanDashboard() {
                onClick={handleDelete}
              >
                Eliminar
+             </button>
+           </div>
+         </div>
+       </div>     )}
+
+     {/* Modal de confirmación de devolución */}
+     {confirmReturn && (
+       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40">
+         <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 animate-modal">
+           <div className="text-center mb-6">
+             <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+               <FaUndo className="text-green-500 text-2xl" />
+             </div>
+             <h3 className="text-xl font-bold text-gray-800 mb-2">Confirmar devolución</h3>
+             <p className="text-gray-600">
+               ¿Estás seguro de que deseas marcar como devuelto el libro{" "}
+               <span className="font-semibold">{getBookTitle(confirmReturn.book_id)}</span>?
+               <br />
+               Esta acción marcará el préstamo como completado.
+             </p>
+           </div>
+           <div className="flex justify-end space-x-3">
+             <button
+               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 transition-colors"
+               onClick={() => setConfirmReturn(null)}
+             >
+               Cancelar
+             </button>
+             <button
+               className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white transition-colors"
+               onClick={handleReturnBook}
+             >
+               Devolver Libro
              </button>
            </div>
          </div>
@@ -904,7 +989,7 @@ export default function LoanDashboard() {
              {loans.length === 0 ? "No hay préstamos registrados." : "No se encontraron préstamos con los filtros aplicados."}
            </div>
          ) : (
-           filteredLoans.map((loan) => (
+           paginatedLoans.map((loan) => (
              <div key={loan.loan_id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
                <div className="flex justify-between items-start mb-4">
                  <div className="flex-1">
@@ -943,8 +1028,7 @@ export default function LoanDashboard() {
                  )}
                </div>
                
-               <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-100">
-                 <button
+               <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-100">                 <button
                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                    onClick={() => {
                      setEditLoan(loan)
@@ -962,7 +1046,17 @@ export default function LoanDashboard() {
                    title="Editar préstamo"
                  >
                    <FaEdit />
-                 </button>
+                 </button>                 {/* Botón de devolución - solo para préstamos activos y vencidos */}
+                 {(loan.status === "active" || loan.status === "overdue") && (
+                   <button
+                     className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                     onClick={() => setConfirmReturn(loan)}
+                     title="Devolver libro"
+                     aria-label={`Devolver libro ${loan.book_title}`}
+                   >
+                     <FaUndo />
+                   </button>
+                 )}
                  <button
                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                    onClick={() => setConfirmDelete(loan)}
@@ -971,10 +1065,94 @@ export default function LoanDashboard() {
                    <FaTrash />
                  </button>
                </div>
-             </div>
-           ))
+             </div>           ))
          )}
        </div>
+
+       {/* Paginación */}
+       {totalPages > 1 && (
+         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+           {/* Información de paginación */}
+           <div className="text-sm text-gray-600">
+             Mostrando {((currentPage - 1) * loansPerPage) + 1} a {Math.min(currentPage * loansPerPage, filteredLoans.length)} de {filteredLoans.length} préstamos
+           </div>
+           
+           {/* Controles de paginación */}
+           <div className="flex items-center gap-2">
+             {/* Botón Primera página */}
+             <button
+               className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               onClick={() => setCurrentPage(1)}
+               disabled={currentPage === 1}
+               title="Primera página"
+             >
+               ««
+             </button>
+             
+             {/* Botón Anterior */}
+             <button
+               className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+               disabled={currentPage === 1}
+               title="Página anterior"
+             >
+               «
+             </button>
+
+             {/* Números de página */}
+             <div className="flex items-center gap-1">
+               {(() => {
+                 const pages = [];
+                 const maxVisible = 5;
+                 let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                 let end = Math.min(totalPages, start + maxVisible - 1);
+                 
+                 if (end - start < maxVisible - 1) {
+                   start = Math.max(1, end - maxVisible + 1);
+                 }
+
+                 for (let i = start; i <= end; i++) {
+                   pages.push(
+                     <button
+                       key={i}
+                       className={`px-3 py-2 rounded border ${
+                         i === currentPage
+                           ? 'bg-[#2366a8] border-[#2366a8] text-white'
+                           : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                       }`}
+                       onClick={() => setCurrentPage(i)}
+                     >
+                       {i}
+                     </button>
+                   );
+                 }
+
+                 return pages;
+               })()}
+             </div>
+
+             {/* Botón Siguiente */}
+             <button
+               className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+               disabled={currentPage === totalPages}
+               title="Página siguiente"
+             >
+               »
+             </button>
+             
+             {/* Botón Última página */}
+             <button
+               className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               onClick={() => setCurrentPage(totalPages)}
+               disabled={currentPage === totalPages}
+               title="Última página"
+             >
+               »»
+             </button>
+           </div>
+         </div>
+       )}
      </div>
    </div>
  )

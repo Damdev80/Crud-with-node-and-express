@@ -26,7 +26,6 @@ import { motion, AnimatePresence } from "framer-motion" // eslint-disable-line n
 export default function AuthorDashboard() {
   const { isLibrarianOrAdmin } = useAuth()
   const navigate = useNavigate()
-
   const [authors, setAuthors] = useState([])
   const [_filteredAuthors, setFilteredAuthors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -39,6 +38,17 @@ export default function AuthorDashboard() {
   const [authorToDelete, setAuthorToDelete] = useState(null)
   const [notification, setNotification] = useState({ show: false, type: "", message: "" })
   const [formErrors, setFormErrors] = useState({})
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const [authorsPerPage] = useState(8) // 8 autores por página para mantener consistencia con el grid
+  
+  // Calcular paginación
+  const totalPages = Math.ceil(_filteredAuthors.length / authorsPerPage)
+  const paginatedAuthors = _filteredAuthors.slice(
+    (currentPage - 1) * authorsPerPage,
+    currentPage * authorsPerPage
+  )
 
   const [form, setForm] = useState({
     first_name: "",
@@ -107,7 +117,6 @@ export default function AuthorDashboard() {
       setIsLoading(false)
     }
   }
-
   const filterAndSortAuthors = () => {
     let filtered = [...authors]
 
@@ -135,6 +144,8 @@ export default function AuthorDashboard() {
     })
 
     setFilteredAuthors(filtered)
+    // Resetear a la primera página cuando cambian los filtros
+    setCurrentPage(1)
   }
 
   const handleSort = (key) => {
@@ -555,10 +566,10 @@ export default function AuthorDashboard() {
                 Limpiar búsqueda
               </button>
             )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {_filteredAuthors.map((author) => (
+          </div>        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {paginatedAuthors.map((author) => (
               <motion.div
                 key={author.author_id}
                 layout
@@ -639,9 +650,94 @@ export default function AuthorDashboard() {
                     </div>
                   )}
                 </div>
-              </motion.div>
-            ))}
+              </motion.div>            ))}
           </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Información de paginación */}
+              <div className="text-sm text-gray-600">
+                Mostrando {((currentPage - 1) * authorsPerPage) + 1} a {Math.min(currentPage * authorsPerPage, _filteredAuthors.length)} de {_filteredAuthors.length} autores
+              </div>
+              
+              {/* Controles de paginación */}
+              <div className="flex items-center gap-2">
+                {/* Botón Primera página */}
+                <button
+                  className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  title="Primera página"
+                >
+                  ««
+                </button>
+                
+                {/* Botón Anterior */}
+                <button
+                  className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  title="Página anterior"
+                >
+                  «
+                </button>
+
+                {/* Números de página */}
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const pages = [];
+                    const maxVisible = 5;
+                    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                    let end = Math.min(totalPages, start + maxVisible - 1);
+                    
+                    if (end - start < maxVisible - 1) {
+                      start = Math.max(1, end - maxVisible + 1);
+                    }
+
+                    for (let i = start; i <= end; i++) {
+                      pages.push(
+                        <button
+                          key={i}
+                          className={`px-3 py-2 rounded border ${
+                            i === currentPage
+                              ? 'bg-[#2366a8] border-[#2366a8] text-white'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setCurrentPage(i)}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+
+                    return pages;
+                  })()}
+                </div>
+
+                {/* Botón Siguiente */}
+                <button
+                  className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  title="Página siguiente"
+                >
+                  »
+                </button>
+                
+                {/* Botón Última página */}
+                <button
+                  className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  title="Última página"
+                >
+                  »»
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

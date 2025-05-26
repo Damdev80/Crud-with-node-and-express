@@ -430,7 +430,7 @@ const Dashboard = () => {
             {isLibrarianOrAdmin() && (
               <button
                 onClick={handleAddBookTransition}
-                className="flex items-center bg-[#79b2e9] hover:bg-[#2366a8] text-white px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center bg-[#2366a8] hover:bg-[#2366af] text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <FaPlus className="mr-2" />
                 Añadir Libro
