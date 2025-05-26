@@ -86,11 +86,26 @@ export default function LoanDashboard() {
       const res = await fetch(API_ENDPOINTS.books)
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
-      setBooks(data)
-      return data
+      
+      console.log("📚 [BOOKS] Respuesta de API books:", data)
+      
+      // Manejar tanto respuestas con estructura {success, data} como arrays directos
+      let booksArray;
+      if (data.success && Array.isArray(data.data)) {
+        booksArray = data.data;
+      } else if (Array.isArray(data)) {
+        booksArray = data;
+      } else {
+        console.warn("Respuesta inesperada de la API de libros:", data)
+        booksArray = [];
+      }
+      
+      setBooks(booksArray)
+      return booksArray
     } catch (err) {
       console.error('Error fetching books:', err)
       setError(err.message)
+      setBooks([]) // ← IMPORTANTE: asegurar que books sea un array
       return []
     } finally {
       setIsLoading(false)
