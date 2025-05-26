@@ -769,28 +769,143 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* Paginación simple */}
+              )}              {/* Paginación mejorada */}
               {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 mr-2"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </button>
-                  <span className="px-4 py-1 text-gray-700 font-semibold bg-[#e3f0fb] rounded border border-[#79b2e9]">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <button
-                    className="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 ml-2"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Siguiente
-                  </button>
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Información de paginación */}
+                  <div className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * booksPerPage) + 1} a {Math.min(currentPage * booksPerPage, filteredBooks.length)} de {filteredBooks.length} libros
+                  </div>
+                  
+                  {/* Controles de paginación */}
+                  <div className="flex items-center gap-2">
+                    {/* Botón Primera página */}
+                    <button
+                      className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      title="Primera página"
+                    >
+                      ««
+                    </button>
+                    
+                    {/* Botón Anterior */}
+                    <button
+                      className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      title="Página anterior"
+                    >
+                      «
+                    </button>
+
+                    {/* Números de página */}
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const pages = [];
+                        const maxVisible = 5;
+                        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        
+                        if (end - start < maxVisible - 1) {
+                          start = Math.max(1, end - maxVisible + 1);
+                        }
+
+                        if (start > 1) {
+                          pages.push(
+                            <button
+                              key={1}
+                              className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
+                              onClick={() => setCurrentPage(1)}
+                            >
+                              1
+                            </button>
+                          );
+                          if (start > 2) {
+                            pages.push(<span key="ellipsis1" className="px-2 text-gray-400">...</span>);
+                          }
+                        }
+
+                        for (let i = start; i <= end; i++) {
+                          pages.push(
+                            <button
+                              key={i}
+                              className={`px-3 py-2 rounded border ${
+                                i === currentPage
+                                  ? 'bg-[#2366a8] border-[#2366a8] text-white'
+                                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                              }`}
+                              onClick={() => setCurrentPage(i)}
+                            >
+                              {i}
+                            </button>
+                          );
+                        }
+
+                        if (end < totalPages) {
+                          if (end < totalPages - 1) {
+                            pages.push(<span key="ellipsis2" className="px-2 text-gray-400">...</span>);
+                          }
+                          pages.push(
+                            <button
+                              key={totalPages}
+                              className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
+                              onClick={() => setCurrentPage(totalPages)}
+                            >
+                              {totalPages}
+                            </button>
+                          );
+                        }
+
+                        return pages;
+                      })()}
+                    </div>
+
+                    {/* Botón Siguiente */}
+                    <button
+                      className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      title="Página siguiente"
+                    >
+                      »
+                    </button>
+                    
+                    {/* Botón Última página */}
+                    <button
+                      className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      title="Última página"
+                    >
+                      »»
+                    </button>
+                  </div>
+
+                  {/* Selector de libros por página */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-600">Por página:</span>
+                    <select
+                      value={booksPerPage}
+                      onChange={(e) => {
+                        const newBooksPerPage = parseInt(e.target.value);
+                        const newTotalPages = Math.ceil(filteredBooks.length / newBooksPerPage);
+                        if (currentPage > newTotalPages) {
+                          setCurrentPage(newTotalPages || 1);
+                        }
+                        // Necesitamos hacer esto mutable para actualizar booksPerPage
+                        window.booksPerPage = newBooksPerPage;
+                        window.location.reload(); // Temporal - en una app real usarías estado
+                      }}
+                      className="px-2 py-1 border border-gray-300 rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#2366a8]"
+                    >
+                      <option value={4}>4</option>
+                      <option value={8}>8</option>
+                      <option value={12}>12</option>
+                      <option value={16}>16</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </>

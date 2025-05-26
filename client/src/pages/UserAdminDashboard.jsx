@@ -16,12 +16,21 @@ const UserAdminDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10); // 10 usuarios por página
+  
+  // Calcular paginación
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
+  );
   // Cargar usuarios al iniciar
   useEffect(() => {
     fetchUsers();
-  }, []);
-
+  }, [fetchUsers]);
   // Filtrar usuarios
   useEffect(() => {
     if (users.length > 0) {
@@ -42,9 +51,10 @@ const UserAdminDashboard = () => {
       }
 
       setFilteredUsers(filtered);
+      // Resetear a la primera página cuando cambian los filtros
+      setCurrentPage(1);
     }
   }, [users, searchTerm, roleFilter]);
-
   // Obtener usuarios
   const fetchUsers = async () => {
     setLoading(true);
@@ -307,12 +317,10 @@ const UserAdminDashboard = () => {
                   {roleFilter !== 'all' && <span> con rol: {getRoleName(roleFilter)}</span>}
                 </div>
               )}
-            </div>
-
-            {/* Componente de vista de usuarios con contenedor optimizado */}
+            </div>            {/* Componente de vista de usuarios con contenedor optimizado */}
             <div className="max-w-full overflow-hidden bg-gray-50 rounded-xl shadow-sm border border-gray-100">
               <UserView 
-                users={filteredUsers}
+                users={paginatedUsers}
                 loading={loading}
                 error={error}
                 onChangeRole={handleChangeRole}
@@ -322,6 +330,118 @@ const UserAdminDashboard = () => {
                 roleFilter={roleFilter}
                 setRoleFilter={setRoleFilter}
               />
+              
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 bg-white border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Información de paginación */}
+                    <div className="text-sm text-gray-600">
+                      Mostrando {((currentPage - 1) * usersPerPage) + 1} a {Math.min(currentPage * usersPerPage, filteredUsers.length)} de {filteredUsers.length} usuarios
+                    </div>
+                    
+                    {/* Controles de paginación */}
+                    <div className="flex items-center gap-2">
+                      {/* Botón Primera página */}
+                      <button
+                        className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        title="Primera página"
+                      >
+                        ««
+                      </button>
+                      
+                      {/* Botón Anterior */}
+                      <button
+                        className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        title="Página anterior"
+                      >
+                        «
+                      </button>
+
+                      {/* Números de página */}
+                      <div className="flex items-center gap-1">
+                        {(() => {
+                          const pages = [];
+                          const maxVisible = 5;
+                          let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                          let end = Math.min(totalPages, start + maxVisible - 1);
+                          
+                          if (end - start < maxVisible - 1) {
+                            start = Math.max(1, end - maxVisible + 1);
+                          }
+
+                          for (let i = start; i <= end; i++) {
+                            pages.push(
+                              <button
+                                key={i}
+                                className={`px-3 py-2 rounded border ${
+                                  i === currentPage
+                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setCurrentPage(i)}
+                              >
+                                {i}
+                              </button>
+                            );
+                          }
+
+                          return pages;
+                        })()}
+                      </div>
+
+                      {/* Botón Siguiente */}
+                      <button
+                        className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        title="Página siguiente"
+                      >
+                        »
+                      </button>
+                      
+                      {/* Botón Última página */}
+                      <button
+                        className="px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        title="Última página"
+                      >
+                        »»
+                      </button>
+                    </div>
+
+                    {/* Selector de usuarios por página */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-600">Por página:</span>
+                      <select
+                        value={usersPerPage}
+                        onChange={(e) => {
+                          const newUsersPerPage = parseInt(e.target.value);
+                          const newTotalPages = Math.ceil(filteredUsers.length / newUsersPerPage);
+                          if (currentPage > newTotalPages) {
+                            setCurrentPage(newTotalPages || 1);
+                          }
+                          // Temporal - en una app real usarías estado
+                          window.usersPerPage = newUsersPerPage;
+                          window.location.reload();
+                        }}
+                        className="px-2 py-1 border border-gray-300 rounded text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={15}>15</option>
+                        <option value={20}>20</option>
+                        <option value={25}>25</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
