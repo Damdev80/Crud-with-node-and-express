@@ -20,12 +20,21 @@ export default function EditorialDashboard() {
   const [sortOrder, setSortOrder] = useState("asc")
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [editorialToDelete, setEditorialToDelete] = useState(null)
-  const [activeView, setActiveView] = useState("grid")
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const [editorialsPerPage] = useState(6) // 6 editoriales por página
+  
+  // Calcular paginación
+  const totalPages = Math.ceil(filteredEditorials.length / editorialsPerPage)
+  const paginatedEditorials = filteredEditorials.slice(
+    (currentPage - 1) * editorialsPerPage,
+    currentPage * editorialsPerPage
+  )
 
   useEffect(() => {
     fetchEditorials()
   }, [])
-
   useEffect(() => {
     // Filter and sort editorials whenever search query or sort order changes
     let filtered = [...editorials]
@@ -47,6 +56,8 @@ export default function EditorialDashboard() {
     })
 
     setFilteredEditorials(filtered)
+    // Resetear a la primera página cuando cambien los filtros
+    setCurrentPage(1)
   }, [editorials, searchQuery, sortOrder])
 
   const fetchEditorials = async () => {
@@ -59,13 +70,12 @@ export default function EditorialDashboard() {
       // Add a random book count for demonstration purposes
       const editorialsWithCount = (data.data || []).map((ed) => ({
         ...ed,
-        book_count: Math.floor(Math.random() * 50),
-        created_at: new Date().toISOString().split("T")[0],
+        book_count: Math.floor(Math.random() * 50),        created_at: new Date().toISOString().split("T")[0],
       }))
 
       setEditorials(editorialsWithCount)
       setFilteredEditorials(editorialsWithCount)
-    } catch (err) {
+    } catch {
       setError("Error al cargar editoriales")
     } finally {
       setIsLoading(false)
@@ -211,39 +221,145 @@ export default function EditorialDashboard() {
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} style={{ background: "#fff", border: "1px solid #b6d4f5", borderRadius: 8, padding: "8px 16px", color: "#2366a8", cursor: "pointer" }}>Limpiar búsqueda</button>
             )}
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
-            {filteredEditorials.map(ed => (
-              <div key={ed.editorial_id} style={{ background: "#fff", border: "1px solid #b6d4f5", borderRadius: 12, boxShadow: "0 1px 4px #e3f0fb", padding: 20, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <span style={{ fontWeight: 700, color: "#2366a8", fontSize: 18 }}>{ed.name}</span>
-                    <span style={{ background: "#e3f0fb", color: "#2366a8", borderRadius: 16, padding: "2px 12px", fontSize: 13, fontWeight: 600 }}>{ed.book_count} {ed.book_count === 1 ? "libro" : "libros"}</span>
+          </div>        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+              {paginatedEditorials.map(ed => (
+                <div key={ed.editorial_id} style={{ background: "#fff", border: "1px solid #b6d4f5", borderRadius: 12, boxShadow: "0 1px 4px #e3f0fb", padding: 20, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontWeight: 700, color: "#2366a8", fontSize: 18 }}>{ed.name}</span>
+                      <span style={{ background: "#e3f0fb", color: "#2366a8", borderRadius: 16, padding: "2px 12px", fontSize: 13, fontWeight: 600 }}>{ed.book_count} {ed.book_count === 1 ? "libro" : "libros"}</span>
+                    </div>
+                    <div style={{ color: "#5a7ca8", fontSize: 13, marginTop: 4 }}>Creada: {ed.created_at}</div>
+                    <div style={{ color: "#444", fontSize: 15, marginTop: 8 }}>{ed.description || "Sin descripción"}</div>
+                  </div>                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+                    {isLibrarianOrAdmin() && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(ed)}
+                          style={{ border: "1px solid #b6d4f5", color: "#2366a8", background: "#e3f0fb", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
+                        >
+                          <Pencil style={{ width: 16, height: 16, marginRight: 6 }} /> Editar
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(ed.editorial_id)}
+                          style={{ border: "1px solid #fca5a5", color: "#b91c1c", background: "#fff0f0", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
+                        >
+                          <Trash2 style={{ width: 16, height: 16, marginRight: 6 }} /> Eliminar
+                        </button>
+                      </>
+                    )}
                   </div>
-                  <div style={{ color: "#5a7ca8", fontSize: 13, marginTop: 4 }}>Creada: {ed.created_at}</div>
-                  <div style={{ color: "#444", fontSize: 15, marginTop: 8 }}>{ed.description || "Sin descripción"}</div>
-                </div>                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-                  {isLibrarianOrAdmin() && (
-                    <>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={{ marginTop: 32, display: "flex", justifyContent: "center", alignItems: "center", gap: 16 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #b6d4f5",
+                      borderRadius: 8,
+                      background: currentPage === 1 ? "#f0f8ff" : "#fff",
+                      color: currentPage === 1 ? "#9ca3af" : "#2366a8",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      fontWeight: 600
+                    }}
+                  >
+                    ««
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #b6d4f5",
+                      borderRadius: 8,
+                      background: currentPage === 1 ? "#f0f8ff" : "#fff",
+                      color: currentPage === 1 ? "#9ca3af" : "#2366a8",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      fontWeight: 600
+                    }}
+                  >
+                    ‹
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
                       <button
-                        onClick={() => handleEdit(ed)}
-                        style={{ border: "1px solid #b6d4f5", color: "#2366a8", background: "#e3f0fb", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        style={{
+                          padding: "8px 12px",
+                          border: "1px solid #b6d4f5",
+                          borderRadius: 8,
+                          background: currentPage === pageNum ? "#2366a8" : "#fff",
+                          color: currentPage === pageNum ? "#fff" : "#2366a8",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          minWidth: 40
+                        }}
                       >
-                        <Pencil style={{ width: 16, height: 16, marginRight: 6 }} /> Editar
+                        {pageNum}
                       </button>
-                      <button
-                        onClick={() => confirmDelete(ed.editorial_id)}
-                        style={{ border: "1px solid #fca5a5", color: "#b91c1c", background: "#fff0f0", borderRadius: 8, padding: "6px 14px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center" }}
-                      >
-                        <Trash2 style={{ width: 16, height: 16, marginRight: 6 }} /> Eliminar
-                      </button>
-                    </>
-                  )}
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #b6d4f5",
+                      borderRadius: 8,
+                      background: currentPage === totalPages ? "#f0f8ff" : "#fff",
+                      color: currentPage === totalPages ? "#9ca3af" : "#2366a8",
+                      cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                      fontWeight: 600
+                    }}
+                  >
+                    ›
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #b6d4f5",
+                      borderRadius: 8,
+                      background: currentPage === totalPages ? "#f0f8ff" : "#fff",
+                      color: currentPage === totalPages ? "#9ca3af" : "#2366a8",
+                      cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                      fontWeight: 600
+                    }}
+                  >
+                    »»
+                  </button>
+                </div>
+                
+                <div style={{ color: "#5a7ca8", fontSize: 14 }}>
+                  Página {currentPage} de {totalPages} ({filteredEditorials.length} editoriales)
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
         {showForm && (
           <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.18)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
