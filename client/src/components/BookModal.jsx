@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaStar, FaBook, FaClock } from "react-icons/fa";
 import { API_ENDPOINTS } from '../config/api.js';
+import BookImage from './BookImage';
 
 function BookCard({ book, onClick }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -33,12 +34,13 @@ function BookCard({ book, onClick }) {
         />
 
         {/* Portada del libro */}
-        <div className="absolute inset-0 rounded-r-md overflow-hidden shadow-xl bg-white border-r border-t border-b border-gray-200">
-          {/* Imagen de portada */}
-          <div className="relative h-[65%] overflow-hidden">            <img
-              src={`${API_ENDPOINTS.uploads}/${book.cover_image}`}
+        <div className="absolute inset-0 rounded-r-md overflow-hidden shadow-xl bg-white border-r border-t border-b border-gray-200">          {/* Imagen de portada */}
+          <div className="relative h-[65%] overflow-hidden">
+            <BookImage
+              src={book.cover_image ? `${API_ENDPOINTS.uploads}/${book.cover_image}` : null}
               alt={book.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className="w-full h-full transition-transform duration-700 group-hover:scale-110"
+              fallbackType="book"
             />
             <div 
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"

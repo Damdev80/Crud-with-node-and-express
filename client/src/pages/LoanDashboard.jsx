@@ -45,27 +45,41 @@ export default function LoanDashboard() {
   const [showFilters, setShowFilters] = useState(false)
   const [form, setForm] = useState({ book_id: "", user_id: "", loan_date: "", return_date: "" })
   const [formErrors, setFormErrors] = useState({})
-  const formRef = useRef(null)
-  // Load data on mount
+  const formRef = useRef(null)  // Load data on mount
   useEffect(() => {
     const loadAll = async () => {
       console.log("🔄 [LOAD] Iniciando carga de datos...")
       console.log("🔄 [LOAD] Usuario actual:", JSON.parse(localStorage.getItem('user') || '{}'))
+      console.log("🔄 [LOAD] Autenticación disponible:", getAuthHeaders())
+      
       const booksData = await fetchBooks()
+      console.log("📚 [LOAD] Books obtenidos:", booksData.length)
+      
       const usersData = await fetchUsers()
+      console.log("👥 [LOAD] Users obtenidos:", usersData.length)
+      
       await fetchLoans(booksData, usersData)
       console.log("✅ [LOAD] Carga de datos completada")
+      console.log("📊 [LOAD] Estado final - loans:", loans.length, "filteredLoans:", filteredLoans.length)
     }
     loadAll()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  
   // Filter & sort when data or filters change
   useEffect(() => {
-    console.log("🔍 [FILTER-EFFECT] loans.length:", loans.length, "searchTerm:", searchTerm, "filterStatus:", filterStatus)
+    console.log("🔍 [FILTER-EFFECT] Ejecutando effect...")
+    console.log("🔍 [FILTER-EFFECT] Estado actual:", { 
+      loansLength: loans.length, 
+      filteredLoansLength: filteredLoans.length,
+      searchTerm, 
+      filterStatus 
+    })
+    
     if (loans.length > 0) {
+      console.log("🔍 [FILTER-EFFECT] Llamando a filterAndSortLoans...")
       filterAndSortLoans()
     } else {
+      console.log("🔍 [FILTER-EFFECT] No hay loans, limpiando filteredLoans...")
       setFilteredLoans([])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,8 +216,7 @@ export default function LoanDashboard() {
        
        const book = validBooks.find((b) => b.book_id === loan.book_id)
        const user = validUsers.find((u) => u.user_id === loan.user_id)
-       
-       return {
+         return {
          ...loan,
          status,
          book_title: book ? book.title : `Libro #${loan.book_id}`,
@@ -213,6 +226,26 @@ export default function LoanDashboard() {
      
      console.log("✅ [LOANS] Préstamos enriquecidos:", enrichedLoans)
      setLoans(enrichedLoans)
+     console.log("🔄 [LOANS] Estado loans actualizado, triggering filter effect...")
+     
+     // IMMEDIATE FIX: Call filter directly since useEffect might not trigger immediately
+     const filtered = enrichedLoans.filter(loan => {
+       let matchesSearch = true;
+       if (searchTerm) {
+         matchesSearch = loan.book_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        loan.user_name?.toLowerCase().includes(searchTerm.toLowerCase());
+       }
+       
+       let matchesStatus = true;
+       if (filterStatus !== "all") {
+         matchesStatus = loan.status === filterStatus;
+       }
+       
+       return matchesSearch && matchesStatus;
+     });
+     
+     console.log("🔄 [LOANS] Aplicando filtros inmediatamente:", filtered.length);
+     setFilteredLoans(filtered);
      
    } catch (err) {
      console.error("❌ [LOANS] Error fetching loans:", err)
@@ -224,8 +257,16 @@ export default function LoanDashboard() {
 
  // (Función enrichLoansData eliminada porque no se utiliza) // Filtrar y ordenar préstamos
  const filterAndSortLoans = (loansToFilter = loans) => {
-   console.log("🔍 [FILTER] Filtrando préstamos:", loansToFilter.length)
+   console.log("🔍 [FILTER] Iniciando filtrado...")
+   console.log("🔍 [FILTER] Parámetros:", { 
+     loansToFilterLength: loansToFilter.length, 
+     searchTerm, 
+     filterStatus,
+     sortConfig 
+   })
+   
    let filtered = [...loansToFilter]
+   console.log("🔍 [FILTER] Array inicial:", filtered.length)
 
    // Aplicar filtro de búsqueda
    if (searchTerm) {
@@ -234,11 +275,13 @@ export default function LoanDashboard() {
          loan.book_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
          loan.user_name?.toLowerCase().includes(searchTerm.toLowerCase()),
      )
+     console.log("🔍 [FILTER] Después de búsqueda:", filtered.length)
    }
 
    // Aplicar filtro de estado
    if (filterStatus !== "all") {
      filtered = filtered.filter((loan) => loan.status === filterStatus)
+     console.log("🔍 [FILTER] Después de filtro de estado:", filtered.length)
    }
 
    // Ordenar
@@ -255,8 +298,9 @@ export default function LoanDashboard() {
      return 0
    })
 
-   console.log("🔍 [FILTER] Préstamos filtrados:", filtered.length)
+   console.log("🔍 [FILTER] Resultado final:", filtered.length)
    setFilteredLoans(filtered)
+   console.log("🔍 [FILTER] Estado filteredLoans actualizado")
    return filtered
  }
 
@@ -289,23 +333,28 @@ export default function LoanDashboard() {
 
    setFormErrors(errors)
    return Object.keys(errors).length === 0
- }
- // Manejar envío del formulario
+ } // Manejar envío del formulario
  const handleSubmit = async (e) => {
    e.preventDefault()
+   console.log("📝 [FORM] Iniciando envío del formulario...")
+   console.log("📝 [FORM] Datos del formulario:", form)
 
-   if (!validateForm()) return
+   if (!validateForm()) {
+     console.log("❌ [FORM] Validación fallida:", formErrors)
+     return
+   }
 
    setIsLoading(true)
    try {
      // Obtener el usuario actual del localStorage
      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+     console.log("👤 [FORM] Usuario actual:", currentUser)
      
      if (!currentUser || !currentUser.user_id) {
        throw new Error('Debe iniciar sesión para gestionar préstamos');
      }
-     
-     if (editLoan) {
+       if (editLoan) {
+       console.log("✏️ [FORM] Editando préstamo:", editLoan.loan_id)
        const res = await fetch(`${API_ENDPOINTS.loans}/${editLoan.loan_id}`, {
          method: "PUT",
          headers: { 
@@ -321,8 +370,10 @@ export default function LoanDashboard() {
          const errorData = await res.json().catch(() => ({}));
          throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
        }
+       console.log("✅ [FORM] Préstamo actualizado exitosamente")
        showNotification("success", "Préstamo actualizado correctamente")
      } else {
+       console.log("➕ [FORM] Creando nuevo préstamo")
        const res = await fetch(API_ENDPOINTS.loans, {
          method: "POST",
          headers: { ...getAuthHeaders() },
@@ -331,19 +382,23 @@ export default function LoanDashboard() {
 
        if (!res.ok) {
          const errorData = await res.json().catch(() => ({}));
+         console.log("❌ [FORM] Error en la respuesta:", errorData)
          throw new Error(`Error ${res.status}: ${errorData.message || res.statusText}`);
        }
+       console.log("✅ [FORM] Préstamo creado exitosamente")
        showNotification("success", "Préstamo registrado correctamente")
      }
 
+     console.log("🔄 [FORM] Limpiando formulario y recargando datos...")
      setShowForm(false)
      setEditLoan(null)
      resetForm()
      const booksData = await fetchBooks()
      const usersData = await fetchUsers()
      await fetchLoans(booksData, usersData)
+     console.log("✅ [FORM] Proceso completado")
    } catch (err) {
-     console.error("Error saving loan:", err)
+     console.error("❌ [FORM] Error saving loan:", err)
      showNotification("error", `Error: ${err.message || "No se pudo guardar el préstamo"}`)
    } finally {
      setIsLoading(false)
@@ -443,9 +498,7 @@ export default function LoanDashboard() {
 
 
  // Obtener icono según estado del préstamo
- // (Función eliminada porque no se utiliza)
-
- // Estadísticas
+ // (Función eliminada porque no se utiliza) // Estadísticas
  const stats = getStats()
 
  return (

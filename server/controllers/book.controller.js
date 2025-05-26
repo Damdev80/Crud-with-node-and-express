@@ -1,4 +1,5 @@
 import ModelFactory from '../models/model-factory.js';
+import imageStorage from '../utils/imageStorage.js';
 
 const Book = ModelFactory.Book;
 const Author = ModelFactory.Author;
@@ -9,7 +10,15 @@ const Editorial = ModelFactory.Editorial;
 export const getAllBooks = async (req, res) => {
   try {
     const books = await Book.getAllWithDetails();
-    res.status(200).json({ success: true, data: books });
+    
+    // Verificar si las imágenes existen y agregar URLs completas
+    const booksWithImageStatus = books.map(book => ({
+      ...book,
+      cover_image_url: book.cover_image ? imageStorage.getImageUrl(book.cover_image, req.protocol + '://' + req.get('host')) : null,
+      image_exists: book.cover_image ? imageStorage.imageExists(book.cover_image) : false
+    }));
+    
+    res.status(200).json({ success: true, data: booksWithImageStatus });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al obtener libros', error: error.message });
   }
@@ -36,14 +45,14 @@ export const getBookById = async (req, res) => {
     let editorial = null;
     if (book.editorial_id) {
       editorial = await Editorial.getById(book.editorial_id);
-    }
-
-    // Estructura enriquecida
+    }    // Estructura enriquecida con información de imagen
     const bookWithDetails = {
       ...book,
       author: author ? { name: `${author.first_name}${author.last_name ? ' ' + author.last_name : ''}` } : null,
       category: category ? { name: category.name } : null,
       editorial: editorial ? { name: editorial.name } : null,
+      cover_image_url: book.cover_image ? imageStorage.getImageUrl(book.cover_image, req.protocol + '://' + req.get('host')) : null,
+      image_exists: book.cover_image ? imageStorage.imageExists(book.cover_image) : false
     };
 
     res.json({ success: true, data: bookWithDetails });
@@ -85,9 +94,7 @@ export const createBook = async (req, res) => {
     if (!edId && req.body.editorial_name) {
       const editorial = await Editorial.findOrCreateByName(req.body.editorial_name);
       edId = editorial.editorial_id;
-    }
-
-    // Create the book record
+    }    // Create the book record
     const newBook = await Book.create({
       title,
       description,
@@ -100,10 +107,18 @@ export const createBook = async (req, res) => {
       cover_image: coverImagePath,
     });
 
+    // Log image upload success
+    if (coverImagePath) {
+      console.log(`📸 Image uploaded for book "${title}": ${coverImagePath}`);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Libro creado con éxito',
-      data: newBook,
+      data: {
+        ...newBook,
+        cover_image_url: coverImagePath ? imageStorage.getImageUrl(coverImagePath, req.protocol + '://' + req.get('host')) : null
+      },
     });
   } catch (error) {
     res.status(500).json({

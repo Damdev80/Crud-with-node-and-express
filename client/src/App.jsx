@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import CategoryDashboard from './pages/CategoryDashboard';
 import EditorialDashboard from './pages/EditorialDashboard';
 import UserAdminDashboard from './pages/UserAdminDashboard';
+import LoanDebugTest from './components/LoanDebugTest';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -71,12 +72,14 @@ export function App() {
             <ProtectedRoute roles={['librarian', 'admin']}>
               <CategoryDashboard />
             </ProtectedRoute>
-          } 
-        />        <Route 
-          path="/editorial-dashboard" 
+          }        />
+        
+        {/* Debug route for testing */}
+        <Route 
+          path="/debug-loans" 
           element={
             <ProtectedRoute roles={['librarian', 'admin']}>
-              <EditorialDashboard />
+              <LoanDebugTest />
             </ProtectedRoute>
           } 
         />

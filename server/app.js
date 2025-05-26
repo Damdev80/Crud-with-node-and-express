@@ -67,8 +67,47 @@ app.use(processUser);
 
 const PORT = process.env.PORT || 8000;
 
-// Servir archivos estáticos de la carpeta uploads
-app.use('/uploads', express.static('uploads'));
+// Servir archivos estáticos de la carpeta uploads con manejo mejorado
+import imageStorage from './utils/imageStorage.js';
+
+app.use('/uploads', express.static(imageStorage.getUploadPath()));
+
+// Debug endpoint para verificar estado de imágenes
+app.get('/api/debug/images', (req, res) => {
+  try {
+    const report = imageStorage.generateBackupReport();
+    res.json({
+      success: true,
+      message: 'Image storage report generated',
+      data: report
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error generating image report',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para limpiar imágenes antiguas (solo para admins)
+app.post('/api/admin/cleanup-images', (req, res) => {
+  try {
+    const { days = 30 } = req.body;
+    const deletedCount = imageStorage.cleanupOldImages(days);
+    res.json({
+      success: true,
+      message: `Image cleanup completed`,
+      deletedFiles: deletedCount
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error during cleanup',
+      error: error.message
+    });
+  }
+});
 
 // Rutas de autores
 app.use('/api/authors', authorRoutes);

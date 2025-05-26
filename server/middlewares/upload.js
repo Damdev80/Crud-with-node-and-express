@@ -1,23 +1,40 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
+import imageStorage from '../utils/imageStorage.js';
 
-// Crear la carpeta uploads si no existe
-const uploadDir = 'uploads';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// Configuración de almacenamiento de las imágenes
+// Configuración de almacenamiento de las imágenes con gestión mejorada
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir); // Ruta donde guardar las imágenes
+    const uploadPath = imageStorage.getUploadPath();
+    console.log(`📁 Saving file to: ${uploadPath}`);
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Nombre único para cada imagen
+    // Generar nombre único con timestamp y extensión original
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    console.log(`📝 Generated filename: ${uniqueName}`);
+    cb(null, uniqueName);
   }
 });
 
-const upload = multer({ storage: storage });
+// Configuración de multer con validaciones
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Validar tipos de archivo
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
 
 export default upload;
