@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Set Test User</title>
+</head>
+<body>
+    <h1>Set Test User in localStorage</h1>
+    <button onclick="setTestUser()">Set Test Librarian User</button>
+    <button onclick="checkUser()">Check Current User</button>
+    <button onclick="clearUser()">Clear User</button>
+    <div id="output"></div>
+
+    <script>
+        function setTestUser() {
+            const testUser = {
+                user_id: 21,
+                name: "Test Librarian",
+                email: "librarian@test.com",
+                role: "librarian"
+            };
+            localStorage.setItem('user', JSON.stringify(testUser));
+            document.getElementById('output').innerHTML = 'Test user set: ' + JSON.stringify(testUser, null, 2);
+        }
+
+        function checkUser() {
+            const user = localStorage.getItem('user');
+            document.getElementById('output').innerHTML = 'Current user: ' + (user || 'None');
+        }
+
+        function clearUser() {
+            localStorage.removeItem('user');
+            document.getElementById('output').innerHTML = 'User cleared';
+        }
+
+        // Auto-check on load
+        window.onload = checkUser;
+    </script>
+</body>
+</html>
