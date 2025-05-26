@@ -10,30 +10,6 @@ const User = ModelFactory.User;
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// Debug endpoint to check model status
-router.get('/debug/model-status', async (req, res) => {
-  try {
-    const debugInfo = {
-      timestamp: new Date().toISOString(),
-      dbProvider: process.env.DB_PROVIDER,
-      modelType: User.constructor.name,
-      modelMethods: Object.getOwnPropertyNames(User).filter(n => typeof User[n] === 'function'),
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
-        hasTursoToken: !!process.env.TURSO_AUTH_TOKEN
-      }
-    };
-    res.json({ success: true, data: debugInfo });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Debug endpoint error',
-      error: error.message 
-    });
-  }
-});
-
 // Listar todos los usuarios - admin y bibliotecarios
 router.get('/', isLibrarianOrAdmin, async (req, res) => {
   try {

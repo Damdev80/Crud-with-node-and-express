@@ -38,7 +38,6 @@ const useImagePersistence = () => {
       return updated;
     });
   };
-
   const reportStorageIssue = async (missingImagesList) => {
     try {
       // Log detallado del problema
@@ -47,23 +46,6 @@ const useImagePersistence = () => {
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         missingImages: missingImagesList
-      });
-
-      // Intentar notificar al backend si está disponible
-      await fetch('/api/debug/report-storage-issue', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'IMAGE_PERSISTENCE_ISSUE',
-          missingCount: missingImagesList.length,
-          missingImages: missingImagesList.slice(0, 5), // Solo las primeras 5
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
-        })
-      }).catch(err => {
-        console.warn('Could not report storage issue to backend:', err.message);
       });
 
     } catch (error) {

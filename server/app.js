@@ -72,69 +72,6 @@ import imageStorage from './utils/imageStorage.js';
 
 app.use('/uploads', express.static(imageStorage.getUploadPath()));
 
-// Debug endpoint para verificar estado de imágenes
-app.get('/api/debug/images', (req, res) => {
-  try {
-    const report = imageStorage.generateBackupReport();
-    res.json({
-      success: true,
-      message: 'Image storage report generated',
-      data: report
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error generating image report',
-      error: error.message
-    });
-  }
-});
-
-// Endpoint para reportar problemas de persistencia de imágenes desde el frontend
-app.post('/api/debug/report-storage-issue', (req, res) => {
-  try {
-    const { type, missingCount, missingImages, timestamp, userAgent } = req.body;
-    
-    console.warn('🚨 CLIENT REPORTED STORAGE ISSUE:', {
-      type,
-      missingCount,
-      timestamp,
-      userAgent,
-      samples: missingImages?.slice(0, 3) // Log solo las primeras 3 imágenes
-    });
-
-    // Verificar estado actual del directorio de uploads
-    const currentReport = imageStorage.generateBackupReport();
-    
-    const response = {
-      success: true,
-      message: 'Storage issue report received',
-      clientReport: {
-        type,
-        missingCount,
-        timestamp
-      },
-      serverStatus: {
-        totalImages: currentReport.totalImages,
-        directory: currentReport.directory,
-        isProduction: currentReport.isProduction,
-        storageRecommendation: currentReport.totalImages === 0 && missingCount > 0 
-          ? 'EPHEMERAL_STORAGE_DETECTED_MIGRATE_TO_CLOUD'
-          : 'INVESTIGATE_FURTHER'
-      }
-    };
-
-    res.json(response);
-  } catch (error) {
-    console.error('Error processing storage issue report:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error processing storage issue report',
-      error: error.message
-    });
-  }
-});
-
 // Endpoint para limpiar imágenes antiguas (solo para admins)
 app.post('/api/admin/cleanup-images', (req, res) => {
   try {
@@ -173,50 +110,6 @@ app.get('/health', (req, res) => {
     version: '2.1-turso-fix'
   });
 });
-
-// Debug endpoint para verificar variables de entorno
-app.get('/debug/env', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    environment: {
-      NODE_ENV: process.env.NODE_ENV,
-      DB_PROVIDER: process.env.DB_PROVIDER,
-      hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
-      hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
-      hasJwtSecret: !!process.env.JWT_SECRET,
-      port: process.env.PORT || 8000
-    },
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Debug endpoint para diagnóstico de producción
-app.get('/debug', (req, res) => {
-  try {
-    res.json({
-      status: 'Debug endpoint working',
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        DB_PROVIDER: process.env.DB_PROVIDER,
-        hasTursoUrl: !!process.env.TURSO_DATABASE_URL,
-        hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
-        hasJwtSecret: !!process.env.JWT_SECRET,
-        port: process.env.PORT || 8000,
-        tursoUrlLength: process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.length : 0,
-        tursoTokenLength: process.env.TURSO_AUTH_TOKEN ? process.env.TURSO_AUTH_TOKEN.length : 0
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Debug endpoint error',
-      message: error.message,
-      stack: error.stack
-    });
-  }
-});
-
-
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res, next) => {

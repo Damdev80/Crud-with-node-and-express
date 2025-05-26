@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FaBook, FaExclamationTriangle, FaImage } from 'react-icons/fa';
 import useImagePersistence from '../hooks/useImagePersistence';
-import useImagePersistence from '../hooks/useImagePersistence';
+
 
 const BookImage = ({ 
   src, 

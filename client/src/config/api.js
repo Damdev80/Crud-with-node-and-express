@@ -10,12 +10,6 @@ const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://crud-wi
 // URL base de la API
 export const API_BASE_URL = NODE_ENV === 'production' ? PROD_API_URL : DEV_API_URL;
 
-// Debug: Log de la configuración
-console.log('🔧 [API CONFIG] NODE_ENV:', NODE_ENV);
-console.log('🔧 [API CONFIG] API_BASE_URL:', API_BASE_URL);
-console.log('🔧 [API CONFIG] DEV_API_URL:', DEV_API_URL);
-console.log('🔧 [API CONFIG] PROD_API_URL:', PROD_API_URL);
-
 // URLs completas para diferentes endpoints
 export const API_ENDPOINTS = {
   books: `${API_BASE_URL}/api/books`,
