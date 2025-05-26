@@ -90,6 +90,51 @@ app.get('/api/debug/images', (req, res) => {
   }
 });
 
+// Endpoint para reportar problemas de persistencia de imágenes desde el frontend
+app.post('/api/debug/report-storage-issue', (req, res) => {
+  try {
+    const { type, missingCount, missingImages, timestamp, userAgent } = req.body;
+    
+    console.warn('🚨 CLIENT REPORTED STORAGE ISSUE:', {
+      type,
+      missingCount,
+      timestamp,
+      userAgent,
+      samples: missingImages?.slice(0, 3) // Log solo las primeras 3 imágenes
+    });
+
+    // Verificar estado actual del directorio de uploads
+    const currentReport = imageStorage.generateBackupReport();
+    
+    const response = {
+      success: true,
+      message: 'Storage issue report received',
+      clientReport: {
+        type,
+        missingCount,
+        timestamp
+      },
+      serverStatus: {
+        totalImages: currentReport.totalImages,
+        directory: currentReport.directory,
+        isProduction: currentReport.isProduction,
+        storageRecommendation: currentReport.totalImages === 0 && missingCount > 0 
+          ? 'EPHEMERAL_STORAGE_DETECTED_MIGRATE_TO_CLOUD'
+          : 'INVESTIGATE_FURTHER'
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error processing storage issue report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error processing storage issue report',
+      error: error.message
+    });
+  }
+});
+
 // Endpoint para limpiar imágenes antiguas (solo para admins)
 app.post('/api/admin/cleanup-images', (req, res) => {
   try {

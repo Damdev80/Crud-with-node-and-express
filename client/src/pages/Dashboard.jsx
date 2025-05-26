@@ -24,6 +24,7 @@ import { getLoans } from '../services/loanService';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_ENDPOINTS } from '../config/api.js';
+import BookImageOptimized from '../components/BookImageOptimized';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -505,12 +506,14 @@ const Dashboard = () => {
               <FaEye className="mr-2 text-amber-700" />
               <span className="tracking-wide">Libro más popular</span>
             </h2>
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
-                <img
-                  src={`${API_ENDPOINTS.uploads}/${stats.mostViewed.cover_image}`}
+            <div className="flex flex-col md:flex-row items-center">              <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
+                <BookImageOptimized
+                  originalImage={stats.mostViewed.cover_image}
+                  bookTitle={stats.mostViewed.title}
+                  categoryId={stats.mostViewed.category_id}
                   alt={stats.mostViewed.title}
                   className="w-full h-full object-cover transition-transform duration-700 hover:scale-105 hover:shadow-2xl animate-fade-in"
+                  onImageError={(src) => console.warn(`⚠️ Failed to load most viewed book image: ${src}`)}
                 />
               </div>
               <div className="animate-fade-in">
@@ -689,15 +692,14 @@ const Dashboard = () => {
                         e.currentTarget.style.transform = 'none';
                       }}
                       onClick={() => openBookModal(book)}
-                    >
-                      <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
-                        <img
-                          src={book.cover_image && book.cover_image.startsWith('http')
-                            ? book.cover_image                            : book.cover_image
-                              ? `${API_ENDPOINTS.uploads}/${book.cover_image}`
-                              : '/public/vite.svg'}
+                    >                      <div className="h-48 overflow-hidden flex flex-col items-center justify-center relative">
+                        <BookImageOptimized
+                          originalImage={book.cover_image}
+                          bookTitle={book.title}
+                          categoryId={book.category_id}
                           alt={book.title}
                           className="w-full h-full object-cover"
+                          onImageError={(src) => console.warn(`⚠️ Failed to load image: ${src}`)}
                         />
                         <button
                           className="absolute top-2 right-2 bg-blue-700 hover:bg-blue-800 text-white p-2 rounded-full shadow-md transition-colors z-10"
@@ -737,12 +739,14 @@ const Dashboard = () => {
               ) : (
                 <div className="divide-y divide-gray-200">
                   {paginatedBooks.map((book) => (
-                    <div key={book.book_id} className="py-4 flex items-center hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openBookModal(book)}>
-                      <div className="w-16 h-24 overflow-hidden rounded mr-4">
-                        <img
-                          src={`${API_ENDPOINTS.uploads}/${book.cover_image}`}
+                    <div key={book.book_id} className="py-4 flex items-center hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => openBookModal(book)}>                      <div className="w-16 h-24 overflow-hidden rounded mr-4">
+                        <BookImageOptimized
+                          originalImage={book.cover_image}
+                          bookTitle={book.title}
+                          categoryId={book.category_id}
                           alt={book.title}
                           className="w-full h-full object-cover"
+                          onImageError={(src) => console.warn(`⚠️ Failed to load image: ${src}`)}
                         />
                       </div>
                       <div className="flex-1">
@@ -934,14 +938,13 @@ const Dashboard = () => {
             >
               ×
             </button>
-            <div className="flex flex-col items-center">
-              <img
-                src={selectedBook.cover_image && selectedBook.cover_image.startsWith('http')
-                  ? selectedBook.cover_image                  : selectedBook.cover_image
-                    ? `${API_ENDPOINTS.uploads}/${selectedBook.cover_image}`
-                    : '/public/vite.svg'}
+            <div className="flex flex-col items-center">              <BookImageOptimized
+                originalImage={selectedBook.cover_image}
+                bookTitle={selectedBook.title}
+                categoryId={selectedBook.category_id}
                 alt={selectedBook.title}
                 className="w-40 h-60 object-cover rounded-lg shadow mb-4 border"
+                onImageError={(src) => console.warn(`⚠️ Failed to load modal image: ${src}`)}
               />
               <h2 className="text-2xl font-bold text-[#2366a8] mb-1 text-center">{selectedBook.title}</h2>
               <p className="text-md text-[#2366a8] mb-2 text-center">{selectedBook.author?.name}</p>

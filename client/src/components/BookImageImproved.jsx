@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaBook, FaExclamationTriangle, FaImage } from 'react-icons/fa';
 import useImagePersistence from '../hooks/useImagePersistence';
-import useImagePersistence from '../hooks/useImagePersistence';
 
 const BookImage = ({ 
   src, 
@@ -30,7 +29,8 @@ const BookImage = ({
     img.onload = () => {
       setImageStatus('loaded');
     };
-      img.onerror = () => {
+    
+    img.onerror = () => {
       if (retryCount < maxRetries) {
         // Retry loading after a short delay
         setTimeout(() => {
@@ -49,7 +49,8 @@ const BookImage = ({
         }
       }
     };
-      img.src = src;
+    
+    img.src = src;
   }, [src, retryCount, maxRetries, onImageError, bookTitle, reportMissingImage]);
 
   // Loading state
