@@ -5,10 +5,10 @@
 // Determinar la URL de la API según el entorno
 const NODE_ENV = import.meta.env.VITE_NODE_ENV || 'development';
 const DEV_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://crud-with-node-and-express.onrender.com';
 
-// URL base de la API
-export const API_BASE_URL = NODE_ENV === 'production' ? PROD_API_URL : DEV_API_URL;
+// En producción (Vercel), usamos rutas relativas porque vercel.json hace el rewrite
+// En desarrollo, usamos la URL completa del backend local
+export const API_BASE_URL = NODE_ENV === 'production' ? '' : DEV_API_URL;
 
 // URLs completas para diferentes endpoints
 export const API_ENDPOINTS = {

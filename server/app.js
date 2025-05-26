@@ -33,6 +33,7 @@ const allowedOrigins = [
   'https://localhost:3000',
   'https://localhost:5173',
   process.env.FRONTEND_URL, // Para configurar en Render
+  'https://crud-with-node-and-express-qn0gsbdbu-damdev80s-projects.vercel.app', // Tu dominio actual de Vercel
 ];
 
 // Añadir dominios de Vercel si están definidos
@@ -46,7 +47,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     // Permitir todos los dominios de Vercel (*.vercel.app)
-    if (origin.includes('.vercel.app')) {
+    if (origin && origin.includes('.vercel.app')) {
       return callback(null, true);
     }
     
@@ -55,9 +56,12 @@ app.use(cors({
       return callback(null, true);
     }
     
+    console.log(`❌ CORS blocked origin: ${origin}`);
     return callback(new Error('No permitido por CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());

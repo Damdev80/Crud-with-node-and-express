@@ -3,11 +3,14 @@
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "installCommand": "cd client && npm install",
-  "framework": "vite",
-  "rewrites": [
+  "framework": "vite",  "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "https://crud-with-node-and-express.onrender.com/api/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://crud-with-node-and-express.onrender.com/uploads/$1"
     },
     {
       "source": "/(.*)",
