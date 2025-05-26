@@ -77,10 +77,23 @@ export default function AuthorDashboard() {
       }
       
       const data = await res.json()
-      console.log('✅ [AuthorDashboard] Authors received:', data.length, 'authors')
+      console.log('✅ [AuthorDashboard] Data received:', data)
+
+      // Manejar tanto respuestas con estructura {success, data} como arrays directos
+      let authorsArray;
+      if (data.success && Array.isArray(data.data)) {
+        authorsArray = data.data;
+      } else if (Array.isArray(data)) {
+        authorsArray = data;
+      } else {
+        console.warn("Respuesta inesperada de la API de autores:", data)
+        authorsArray = [];
+      }
+
+      console.log('📚 [AuthorDashboard] Authors array:', authorsArray.length, 'authors')
 
       // Añadir conteo de libros simulado para cada autor
-      const authorsWithBooks = data.map((author) => ({
+      const authorsWithBooks = authorsArray.map((author) => ({
         ...author,
         book_count: getRandomBookCount(),
       }))
@@ -89,6 +102,7 @@ export default function AuthorDashboard() {
     } catch (err) {
       console.error("❌ [AuthorDashboard] Error fetching authors:", err)
       setError(`Error de conexión: ${err.message}`)
+      setAuthors([]) // ← IMPORTANTE: asegurar que authors sea un array
     } finally {
       setIsLoading(false)
     }
