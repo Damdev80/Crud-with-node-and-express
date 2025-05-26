@@ -12,15 +12,13 @@ import EditorialDashboard from './pages/EditorialDashboard';
 import UserAdminDashboard from './pages/UserAdminDashboardSimple';
 import LoanDebugTest from './components/LoanDebugTest';
 import { AuthProvider } from './context/AuthContext';
-import { ImagePersistenceProvider } from './context/ImagePersistenceContext';
+import { StorageProvider } from './context/StorageContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import ImagePersistenceAlert from './components/ImagePersistenceAlert';
 
 export function App() {
   return (
     <AuthProvider>
-      <ImagePersistenceProvider>
-        <ImagePersistenceAlert />
+      <StorageProvider>
         <Routes>
         {/* Rutas públicas */}
         <Route path="/" element={<Home />} />
@@ -102,10 +100,9 @@ export function App() {
             <ProtectedRoute roles={['admin']}>
               <UserAdminDashboard />
             </ProtectedRoute>
-          } 
-        />
+          }        />
       </Routes>
-      </ImagePersistenceProvider>
+      </StorageProvider>
     </AuthProvider>
   );
 }
