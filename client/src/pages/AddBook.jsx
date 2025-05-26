@@ -33,11 +33,10 @@ export default function AddBook() {
   return (
     <div ref={containerRef} className={`p-6 transition-opacity duration-400 ${pageTransition ? 'opacity-0' : 'opacity-100'}`}>
       {/* Botón de regreso al dashboard */}
-      <BookForm onSubmit={handleAdd} onCancel={() => navigate('/dashboard')} />
-      {showSuccess && (
+      <BookForm onSubmit={handleAdd} onCancel={() => navigate('/dashboard')} />      {showSuccess && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
           ¡Libro agregado exitosamente!
-          <div className="mt-2 text-sm text-gray-500">Redirigiendo al catálogo...</div>
+          <div className="mt-2 text-sm text-gray-500">Redirigiendo al dashboard...</div>
         </div>
       )}
     </div>

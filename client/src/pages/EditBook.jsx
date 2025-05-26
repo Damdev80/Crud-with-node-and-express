@@ -68,14 +68,12 @@ export default function EditBook() {
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
-      }
-
-      // Mostrar confirmación de éxito
+      }      // Mostrar confirmación de éxito
       setShowConfirmation(true)
 
-      // Redirigir después de 2 segundos
+      // Redirigir después de 2 segundos al dashboard
       setTimeout(() => {
-        navigate("/")
+        navigate("/dashboard")
       }, 2000)
     } catch (error) {
       console.error("Error updating book:", error)
@@ -123,12 +121,11 @@ export default function EditBook() {
               className="px-4 py-2 bg-[#79b2e9] text-white rounded-lg hover:bg-[#2366a8] transition-colors"
             >
               Intentar de nuevo
-            </button>
-            <button
-              onClick={() => navigate("/")}
+            </button>            <button
+              onClick={() => navigate("/dashboard")}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Volver al inicio
+              Volver al dashboard
             </button>
           </div>
         </div>
@@ -154,7 +151,7 @@ export default function EditBook() {
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">¡Libro actualizado!</h2>
           <p className="text-gray-600">Los cambios se han guardado correctamente.</p>
-          <div className="mt-6 text-sm text-gray-500">Redirigiendo al catálogo...</div>
+          <div className="mt-6 text-sm text-gray-500">Redirigiendo al dashboard...</div>
         </div>
       </div>
     )
@@ -163,13 +160,12 @@ export default function EditBook() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#79b2e9] py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
-        {/* Botón para volver */}
-        <button
+        {/* Botón para volver */}        <button
           onClick={handleCancel}
           className="flex items-center text-[#2366a8] hover:text-[#17406a] mb-6 transition-colors font-semibold"
         >
           <FaArrowLeft className="mr-2" />
-          <span>Volver al catálogo</span>
+          <span>Volver al dashboard</span>
         </button>
 
         {/* Contenedor principal */}
