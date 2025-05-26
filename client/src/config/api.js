@@ -2,13 +2,30 @@
  * Configuración centralizada para URLs de la API
  */
 
-// Determinar la URL de la API según el entorno
-const NODE_ENV = import.meta.env.VITE_NODE_ENV || 'development';
+// Debug de variables de entorno
+console.log('🔍 API Config Debug:', {
+  'import.meta.env.MODE': import.meta.env.MODE,
+  'import.meta.env.PROD': import.meta.env.PROD,
+  'import.meta.env.DEV': import.meta.env.DEV,
+  'import.meta.env.VITE_NODE_ENV': import.meta.env.VITE_NODE_ENV,
+  'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
+  'window.location.origin': typeof window !== 'undefined' ? window.location.origin : 'N/A'
+});
+
+// Determinar el entorno - usar import.meta.env.PROD que es más confiable
+const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
 const DEV_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// En producción (Vercel), usamos rutas relativas porque vercel.json hace el rewrite
-// En desarrollo, usamos la URL completa del backend local
-export const API_BASE_URL = NODE_ENV === 'production' ? '' : DEV_API_URL;
+// En producción (Vercel), SIEMPRE usar rutas relativas
+// En desarrollo, usar la URL completa del backend local
+export const API_BASE_URL = isProduction ? '' : DEV_API_URL;
+
+console.log('🚀 API Configuration:', {
+  isProduction,
+  DEV_API_URL,
+  API_BASE_URL,
+  finalLoginUrl: `${isProduction ? '' : DEV_API_URL}/api/users/login`
+});
 
 // URLs completas para diferentes endpoints
 export const API_ENDPOINTS = {
