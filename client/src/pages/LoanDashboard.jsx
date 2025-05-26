@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { API_ENDPOINTS } from '../config/api.js'
 import {
-  FaBook,
   FaUser,
   FaPlus,
   FaEdit,
