@@ -1,5 +1,5 @@
 // Utilitarios para manejo de URLs de imágenes con fallbacks robustos
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_ENDPOINTS } from '../config/api.js';
 
 // Banco de imágenes de fallback por categoría
 const FALLBACK_IMAGES = {
@@ -72,10 +72,9 @@ export const processBookImageUrl = (originalImage, categoryId, bookTitle = '') =
   if (originalImage) {
     // Si ya es una URL externa (http/https), usarla directamente
     if (originalImage.startsWith('http')) {
-      primaryUrl = originalImage;
-    } else {
-      // Construir URL del servidor
-      primaryUrl = `${API_BASE}/uploads/${originalImage}`;
+      primaryUrl = originalImage;    } else {
+      // Construir URL del servidor usando la configuración correcta
+      primaryUrl = `${API_ENDPOINTS.uploads}/${originalImage}`;
     }
   }
 

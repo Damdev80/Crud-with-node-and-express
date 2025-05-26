@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FaBook, FaExclamationTriangle } from 'react-icons/fa';
-import { processBookImageUrl, checkImageAvailability, CATEGORY_CONFIG } from '../utils/imageUrls';
+import { FaBook } from 'react-icons/fa';
+import { API_ENDPOINTS } from '../config/api.js';
+import { getFallbackImageUrl, CATEGORY_CONFIG } from '../utils/imageUrls';
 
 const BookImageOptimized = ({ 
   originalImage,
@@ -10,49 +11,58 @@ const BookImageOptimized = ({
   className = "",
   onImageError = null
 }) => {
-  const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [imageStatus, setImageStatus] = useState('loading');
-  const [hasTriedFallback, setHasTriedFallback] = useState(false);
-
-  useEffect(() => {
-    const loadImage = async () => {
-      setImageStatus('loading');
-      
-      const { primary, fallback } = processBookImageUrl(originalImage, categoryId, bookTitle);
-      
-      // Intentar cargar la imagen principal primero
-      if (primary && !hasTriedFallback) {
-        const isAvailable = await checkImageAvailability(primary);
-        if (isAvailable) {
-          setCurrentImageUrl(primary);
-          setImageStatus('loaded');
-          return;
-        }
-      }
-      
-      // Si falla la principal, usar fallback
-      if (fallback) {
-        const isFallbackAvailable = await checkImageAvailability(fallback);
-        if (isFallbackAvailable) {
-          setCurrentImageUrl(fallback);
-          setImageStatus('loaded');
-          setHasTriedFallback(true);
-          
-          // Reportar que usamos fallback
-          if (onImageError && primary) {
-            onImageError(primary);
-          }
-          return;
-        }
-      }
-      
-      // Si todo falla, mostrar placeholder
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [usedFallback, setUsedFallback] = useState(false);  useEffect(() => {
+    if (!originalImage) {
+      // Si no hay imagen original, ir directo al placeholder
       setImageStatus('placeholder');
+      return;
+    }
+
+    // Construir URL de la imagen original
+    let primaryUrl;
+    if (originalImage.startsWith('http')) {
+      primaryUrl = originalImage;
+    } else {
+      primaryUrl = `${API_ENDPOINTS.uploads}/${originalImage}`;
+    }
+
+    setImageStatus('loading');
+    setCurrentImageUrl(primaryUrl);
+    setUsedFallback(false);
+    
+    // Precargar imagen para verificar que existe
+    const img = new Image();
+    
+    img.onload = () => {
+      setImageStatus('loaded');
     };
-
-    loadImage();
-  }, [originalImage, categoryId, bookTitle, hasTriedFallback, onImageError]);
-
+    
+    img.onerror = () => {
+      console.warn(`⚠️ Failed to load original image: ${primaryUrl} for book: ${bookTitle}`);
+      
+      // Intentar fallback solo si falla la original
+      const fallbackUrl = getFallbackImageUrl(categoryId, bookTitle);
+      
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => {
+        setCurrentImageUrl(fallbackUrl);
+        setImageStatus('loaded');
+        setUsedFallback(true);
+        if (onImageError) onImageError(primaryUrl);
+      };
+      
+      fallbackImg.onerror = () => {
+        console.error(`❌ Fallback image also failed for book: ${bookTitle}`);
+        setImageStatus('placeholder');
+      };
+      
+      fallbackImg.src = fallbackUrl;
+    };
+    
+    img.src = primaryUrl;
+  }, [originalImage, categoryId, bookTitle, onImageError]);
   // Loading state
   if (imageStatus === 'loading') {
     return (
@@ -73,19 +83,10 @@ const BookImageOptimized = ({
           src={currentImageUrl}
           alt={alt || bookTitle}
           className="w-full h-full object-cover"
-          onError={() => {
-            // Si falla después de cargar, intentar fallback
-            if (!hasTriedFallback) {
-              setHasTriedFallback(true);
-              setImageStatus('loading');
-            } else {
-              setImageStatus('placeholder');
-            }
-          }}
         />
         
         {/* Indicador de que es imagen de fallback */}
-        {hasTriedFallback && (
+        {usedFallback && (
           <div className="absolute top-1 right-1">
             <div 
               className="bg-black bg-opacity-60 text-white text-xs px-1 py-0.5 rounded"
