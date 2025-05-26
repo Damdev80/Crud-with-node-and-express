@@ -1,25 +1,46 @@
 {
-  "name": "biblioteca",
-  "version": "1.0.0",
-  "description": "Sistema de gestión de biblioteca",
+  "name": "library-management-system",
+  "version": "2.1.0",
+  "description": "A modern, full-stack library management system built with React and Node.js",
   "type": "module",
+  "homepage": "https://github.com/yourusername/library-management-system#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/library-management-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/library-management-system/issues"
+  },
   "scripts": {
-    "build": "npm run install:server",
+    "build": "npm run build:client",
     "start": "cd server && npm start",
-    "start:server": "cd server && npm run dev",
-    "start:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
     "install:server": "cd server && npm install",
     "install:client": "cd client && npm install",
     "install:all": "npm run install:server && npm run install:client",
     "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "test:integration": "npm run test:http",
+    "lint": "npm run lint:server && npm run lint:client",
+    "lint:server": "cd server && npm run lint",
+    "lint:client": "cd client && npm run lint",
+    "lint:fix": "npm run lint:server -- --fix && npm run lint:client -- --fix",
     "deploy": "node scripts/deploy.js",
+    "migrate": "cd server && npm run migrate",
     "migrate:turso": "cd server && npm run migrate:turso",
+    "seed": "cd server && npm run seed",
     "verify": "node scripts/verify-integration.js",
     "setup:turso": "node scripts/setup-turso-production.js",
     "test:turso": "node scripts/test-turso-connection.js",
     "check:server": "node scripts/check-server.js",
-    "debug:server": "node scripts/start-server-debug.js",
-    "test:http": "node scripts/test-http-endpoint.js"
+    "test:http": "node scripts/test-http-endpoint.js",
+    "clean": "rm -rf node_modules client/node_modules server/node_modules client/dist server/dist",
+    "fresh-install": "npm run clean && npm run install:all"
   },
   "dependencies": {
     "@libsql/client": "^0.5.6",
@@ -32,17 +53,36 @@
     "mysql2": "3.14.1",
     "node-fetch": "^3.3.2"
   },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
   "engines": {
     "node": ">=18.17.0",
     "npm": ">=9.0.0"
   },
   "keywords": [
-    "biblioteca",
+    "library",
+    "management",
+    "system",
     "books",
     "react",
+    "nodejs",
     "express",
-    "turso"
+    "turso",
+    "sqlite",
+    "mysql",
+    "crud",
+    "fullstack",
+    "jwt",
+    "authentication",
+    "responsive",
+    "modern"
   ],
-  "author": "",
-  "license": "ISC"
+  "author": {
+    "name": "Daniel Buelvas",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername"
+  },
+  "license": "MIT",
+  "private": false
 }
