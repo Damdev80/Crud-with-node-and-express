@@ -506,7 +506,7 @@ const Dashboard = () => {
               <FaEye className="mr-2 text-amber-700" />
               <span className="tracking-wide">Libro más popular</span>
             </h2>
-            <div className="flex flex-col md:flex-row items-center">              <div className="w-32 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
+            <div className="flex flex-col md:flex-row items-center">              <div className="w-56 h-48 overflow-hidden rounded-lg shadow-md mb-4 md:mb-0 md:mr-6 animate-fade-in">
                 <BookImageOptimized
                   originalImage={stats.mostViewed.cover_image}
                   bookTitle={stats.mostViewed.title}
