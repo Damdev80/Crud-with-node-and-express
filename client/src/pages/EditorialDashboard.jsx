@@ -116,13 +116,11 @@ export default function EditorialDashboard() {
       setFormError("Error al guardar la editorial")
     }
   }
-
   const handleEdit = (editorial) => {
     setEditEditorial(editorial)
     setForm({ name: editorial.name, description: editorial.description || "" })
     setShowForm(true)
   }
-
   const confirmDelete = (id) => {
     setEditorialToDelete(id)
     setDeleteConfirmOpen(true)
@@ -130,15 +128,40 @@ export default function EditorialDashboard() {
   const handleDelete = async () => {
     if (!editorialToDelete) return
 
+    // Check if user is authenticated
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user || !user.user_id) {
+      alert("Debes iniciar sesión para eliminar editoriales.")
+      setDeleteConfirmOpen(false)
+      setEditorialToDelete(null)
+      return
+    }
+
     try {
-      await fetch(`${API_ENDPOINTS.editorials}/${editorialToDelete}`, { 
+      const response = await fetch(`${API_ENDPOINTS.editorials}/${editorialToDelete}`, { 
         method: "DELETE",
         headers: getAuthHeaders()
       })
-      alert("Editorial eliminada correctamente.")
-      fetchEditorials()
-    } catch {
-      alert("No se pudo eliminar la editorial.")
+        if (response.ok) {
+        await response.json()
+        alert("Editorial eliminada correctamente.")
+        fetchEditorials()
+      } else {
+        const errorData = await response.json().catch(() => null)
+        
+        // More specific error messages
+        if (response.status === 401) {
+          alert("No tienes permisos para eliminar editoriales. Inicia sesión como administrador o bibliotecario.")
+        } else if (response.status === 403) {
+          alert("No tienes los permisos necesarios para eliminar editoriales.")
+        } else if (errorData && errorData.message && errorData.message.includes('FOREIGN KEY constraint')) {
+          alert("No se puede eliminar esta editorial porque tiene libros asociados. Elimina primero los libros de esta editorial.")
+        } else {
+          alert(`Error al eliminar la editorial: ${response.status} - ${errorData?.message || 'Error desconocido'}`)
+        }
+      }
+    } catch (error) {
+      alert("No se pudo eliminar la editorial: " + error.message)
     } finally {
       setDeleteConfirmOpen(false)
       setEditorialToDelete(null)
