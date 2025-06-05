@@ -25,10 +25,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_ENDPOINTS } from '../config/api.js';
 import BookImageOptimized from '../components/BookImageOptimized';
+import { useCallback } from "react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout, isAdmin, isLibrarianOrAdmin } = useAuth();
+  const { logout, isAdmin, isLibrarianOrAdmin } = useAuth();
   const [books, setBooks] = useState([])
   const [filteredBooks, setFilteredBooks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -39,7 +40,7 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedAuthor, setSelectedAuthor] = useState('all');
   const [viewMode, setViewMode] = useState("grid")
-  const [showAddBook, setShowAddBook] = useState(false)
+  // const [showAddBook, setShowAddBook] = useState(false)
   const [stats, setStats] = useState({
     totalBooks: 0,
     availableBooks: 0,
@@ -60,25 +61,15 @@ const Dashboard = () => {
   const [loans, setLoans] = useState([]);
 
   // Categorías de ejemplo
-  const exampleCategories = [
-    { id: "all", name: "Todas" },
-    { id: "1", name: "Novela" },
-    { id: "2", name: "Poesía" },
-    { id: "3", name: "Ensayo" },
-    { id: "4", name: "Ciencia Ficción" },
-    { id: "5", name: "Historia" },
-  ]
 
-  useEffect(() => {
-    fetchBooks()
-  }, [])
+ 
 
   useEffect(() => {
     if (books.length > 0) {
       filterBooks()
       calculateStats()
     }
-  }, [books, searchTerm, selectedCategory, selectedAuthor])
+  }, [books, searchTerm, selectedCategory, selectedAuthor, filterBooks, calculateStats])
   // Actualizar autores, categorías y préstamos cada vez que se agregue/borre un libro o autor
   useEffect(() => {
     // Obtener categorías y actualizar stats
@@ -248,10 +239,9 @@ const Dashboard = () => {
         views: 98,
         added_date: "2023-06-20",
       },
-    ]
+    ];
   }
-
-  const filterBooks = () => {
+  const filterBooks = useCallback(() => {
     let result = [...books]
 
     // Filtrar por término de búsqueda
@@ -275,8 +265,9 @@ const Dashboard = () => {
     }
 
     setFilteredBooks(result)
-  }
-  const calculateStats = () => {
+  }, [books, searchTerm, selectedCategory, selectedAuthor]);
+
+  const calculateStats = useCallback(() => {
     // Calcular estadísticas básicas de libros
     const totalBooks = books.length;
     const availableBooks = books.filter((book) => book.available_copies > 0).length;
@@ -314,48 +305,13 @@ const Dashboard = () => {
       recentlyAdded,
       mostViewed: mostRented, // Cambiado a mostRented
     }));
-  }
+  }, [books, loans]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value)
   }
 
-  const handleCategoryChange = (categoryId) => {
-    setSelectedCategory(categoryId)
-  }
 
-  const handleAddBook = async (bookData) => {
-    // Aquí iría la lógica para añadir un libro a través de la API
-    // Si implementas la API, muestra la alerta después de guardar correctamente:
-    // try {
-    //   const response = await fetch('http://localhost:3000/api/books', { ... })
-    //   if (response.ok) {
-    //     alert('Libro añadido con éxito')
-    //   }
-    // } catch (e) { ... }
-
-    console.log("Añadiendo libro:", bookData)
-    setShowAddBook(false)
-
-    // Simulación de añadir un libro
-    const newBook = {
-      book_id: `${books.length + 1}`,
-      title: bookData.title,
-      author: { name: "Autor del libro" }, // Esto vendría de la API
-      category: { name: "Categoría" }, // Esto vendría de la API
-      category_id: bookData.category_id,
-      description: bookData.description,
-      publication_year: bookData.publication_year,
-      isbn: bookData.isbn,
-      available_copies: bookData.available_copies,
-      cover_image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=687&auto=format&fit=crop",
-      views: 0,
-      added_date: new Date().toISOString().split("T")[0],
-    }
-
-    setBooks([...books, newBook])
-    alert("Libro añadido con éxito")
-  }
 
   const exportCatalog = () => {
     // Lógica para exportar el catálogo
@@ -918,10 +874,7 @@ const Dashboard = () => {
       </div>
       <Footer/>
       {/* Modal para añadir libro */}
-      {showAddBook && (() => {
-        window.location.href = '/add';
-        return null;
-      })()}
+      {/* Eliminado showAddBook modal redirection porque showAddBook ya no se usa */}
 
       {/* Modal para ver información del libro */}
       {showModal && selectedBook && (
