@@ -16,7 +16,8 @@ import {
   FaCalendarAlt,
   FaUserFriends,
   FaUserCog,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaHistory
 } from "react-icons/fa"
 import {Footer} from "../components/Footer"
 import { getCategories, getAuthors } from '../services/filterService';
@@ -55,14 +56,77 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 8;
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-  const paginatedBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);
-  const [selectedBook, setSelectedBook] = useState(null);
+  const paginatedBooks = filteredBooks.slice((currentPage - 1) * booksPerPage, currentPage * booksPerPage);  const [selectedBook, setSelectedBook] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loans, setLoans] = useState([]);
 
-  // Categorías de ejemplo
+  // Filter and calculation functions (moved before useEffect to avoid hoisting issues)
+  const filterBooks = useCallback(() => {
+    let result = [...books]
 
- 
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      result = result.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (book.author?.name && book.author.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (book.description && book.description.toLowerCase().includes(searchTerm.toLowerCase())),
+      )
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== "all") {
+      result = result.filter((book) => String(book.category_id) === String(selectedCategory))
+    }
+
+    // Filtrar por autor
+    if (selectedAuthor !== "all") {
+      result = result.filter((book) => String(book.author_id) === String(selectedAuthor))
+    }
+
+    setFilteredBooks(result)
+  }, [books, searchTerm, selectedCategory, selectedAuthor]);
+
+  const calculateStats = useCallback(() => {
+    // Calcular estadísticas básicas de libros
+    const totalBooks = books.length;
+    const availableBooks = books.filter((book) => book.available_copies > 0).length;
+    
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+    const recentlyAdded = books.filter((book) => {
+      if (!book.added_date) return false;
+      let addedDate;
+      if (typeof book.added_date === 'string') {
+        addedDate = new Date(book.added_date);
+      } else if (book.added_date instanceof Date) {
+        addedDate = book.added_date;
+      } else {
+        return false;
+      }
+      return !isNaN(addedDate) && addedDate >= thirtyDaysAgo;
+    }).length;
+
+    // Libro más rentado (por cantidad de préstamos)
+    let mostRented = null;
+    if (books.length > 0 && Array.isArray(loans) && loans.length > 0) {
+      const loanCounts = {};
+      loans.forEach((loan) => {
+        if (!loan.book_id) return;
+        loanCounts[loan.book_id] = (loanCounts[loan.book_id] || 0) + 1;
+      });
+      const mostRentedBookId = Object.keys(loanCounts).reduce((a, b) => loanCounts[a] > loanCounts[b] ? a : b);
+      mostRented = books.find((b) => String(b.book_id) === String(mostRentedBookId));
+      if (mostRented) mostRented.rentCount = loanCounts[mostRentedBookId];
+    }
+    
+    setStats((prevStats) => ({
+      ...prevStats, // Mantener authors, categories, loans que se actualizan en otros useEffect
+      totalBooks,
+      availableBooks,
+      recentlyAdded,
+      mostViewed: mostRented, // Cambiado a mostRented
+    }));  }, [books, loans]);
 
   useEffect(() => {
     if (books.length > 0) {
@@ -117,10 +181,9 @@ const Dashboard = () => {
 
     updateCategories();
     updateAuthors();
-    updateLoans();
-  }, [books]);
+    updateLoans();  }, [books]);
 
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch(API_ENDPOINTS.books)
@@ -142,11 +205,14 @@ const Dashboard = () => {
       // Datos de ejemplo en caso de error
       const sampleBooks = generateSampleBooks()
       setBooks(sampleBooks)
-      setFilteredBooks(sampleBooks)
-    } finally {
+      setFilteredBooks(sampleBooks)    } finally {
       setIsLoading(false)
-    }
-  }
+    }  }, []);
+
+  // Efecto para cargar libros cuando el componente se monta
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
 
   const generateSampleBooks = () => {
     return [
@@ -233,79 +299,13 @@ const Dashboard = () => {
         category_id: "1",
         description: "Novela ambientada en el Colegio Militar Leoncio Prado que narra la vida de un grupo de cadetes.",
         publication_year: "1963",
-        isbn: "978-8420471830",
-        available_copies: 4,
+        isbn: "978-8420471830",        available_copies: 4,
         cover_image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=687&auto=format&fit=crop",
         views: 98,
         added_date: "2023-06-20",
       },
     ];
   }
-  const filterBooks = useCallback(() => {
-    let result = [...books]
-
-    // Filtrar por término de búsqueda
-    if (searchTerm) {
-      result = result.filter(
-        (book) =>
-          book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (book.author?.name && book.author.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (book.description && book.description.toLowerCase().includes(searchTerm.toLowerCase())),
-      )
-    }
-
-    // Filtrar por categoría
-    if (selectedCategory !== "all") {
-      result = result.filter((book) => String(book.category_id) === String(selectedCategory))
-    }
-
-    // Filtrar por autor
-    if (selectedAuthor !== "all") {
-      result = result.filter((book) => String(book.author_id) === String(selectedAuthor))
-    }
-
-    setFilteredBooks(result)
-  }, [books, searchTerm, selectedCategory, selectedAuthor]);
-
-  const calculateStats = useCallback(() => {
-    // Calcular estadísticas básicas de libros
-    const totalBooks = books.length;
-    const availableBooks = books.filter((book) => book.available_copies > 0).length;
-    
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
-    const recentlyAdded = books.filter((book) => {
-      if (!book.added_date) return false;
-      let addedDate;
-      if (typeof book.added_date === 'string') {
-        addedDate = new Date(book.added_date);
-      } else if (book.added_date instanceof Date) {
-        addedDate = book.added_date;
-      } else {
-        return false;
-      }
-      return !isNaN(addedDate) && addedDate >= thirtyDaysAgo;
-    }).length;
-
-    // Libro más rentado (por cantidad de préstamos)
-    let mostRented = null;
-    if (books.length > 0 && Array.isArray(loans) && loans.length > 0) {
-      const loanCounts = {};
-      loans.forEach((loan) => {
-        if (!loan.book_id) return;
-        loanCounts[loan.book_id] = (loanCounts[loan.book_id] || 0) + 1;
-      });
-      const mostRentedBookId = Object.keys(loanCounts).reduce((a, b) => loanCounts[a] > loanCounts[b] ? a : b);
-      mostRented = books.find((b) => String(b.book_id) === String(mostRentedBookId));
-      if (mostRented) mostRented.rentCount = loanCounts[mostRentedBookId];
-    }    setStats((prevStats) => ({
-      ...prevStats, // Mantener authors, categories, loans que se actualizan en otros useEffect
-      totalBooks,
-      availableBooks,
-      recentlyAdded,
-      mostViewed: mostRented, // Cambiado a mostRented
-    }));
-  }, [books, loans]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value)
@@ -391,8 +391,17 @@ const Dashboard = () => {
               >
                 <FaPlus className="mr-2" />
                 Añadir Libro
+              </button>            )}
+              
+              {/* Botón de historial - accesible para todos los usuarios */}
+              <button
+                onClick={() => navigate('/history')}
+                className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <FaHistory className="mr-2" />
+                Mi Historial
               </button>
-            )}
+
               {/* Mostrar enlace a administración de usuarios solo para admins */}
             {isAdmin() && (
               <button

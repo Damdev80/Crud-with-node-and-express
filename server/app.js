@@ -58,10 +58,9 @@ app.use(cors({
     
     console.log(`❌ CORS blocked origin: ${origin}`);
     return callback(new Error('No permitido por CORS'));
-  },
-  credentials: true,
+  },  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-user-role']
 }));
 
 app.use(express.json());

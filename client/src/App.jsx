@@ -5,6 +5,7 @@ import AddBook from './pages/AddBook';
 import EditBook from './pages/EditBook';
 import AuthorDashboard from './pages/AuthorDashboard';
 import LoanDashboard from './pages/LoanDashboard';
+import History from './pages/History';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CategoryDashboard from './pages/CategoryDashboard';
@@ -30,6 +31,15 @@ export function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>          } 
+        />
+        
+        {/* Historial de préstamos (accesible para todos los usuarios) */}
+        <Route 
+          path="/history" 
+          element={
+            <ProtectedRoute>
+              <History />
             </ProtectedRoute>
           } 
         />

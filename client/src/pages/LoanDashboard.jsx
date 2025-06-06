@@ -21,9 +21,13 @@ import {
   FaTimes,
   FaCheck,
   FaUndo,
+  FaDownload,
+  FaFileAlt,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { getAuthHeaders } from "../utils/authHeaders.js";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function LoanDashboard() {
   // Auth & routing hooks
@@ -558,12 +562,18 @@ export default function LoanDashboard() {
         throw new Error(
           `Error ${res.status}: ${errorData.message || res.statusText}`
         );
-      }
-
-      showNotification("success", "Libro devuelto correctamente");
+      }      showNotification("success", "Libro devuelto correctamente");
       const booksData = await fetchBooks();
       const usersData = await fetchUsers();
       await fetchLoans(booksData, usersData); // Espera a que termine antes de continuar
+      
+      // Generar automáticamente el PDF de paz y salvo para el préstamo devuelto
+      const returnedLoan = {
+        ...confirmReturn,
+        actual_return_date: new Date().toISOString(), // Marcar como devuelto ahora
+        status: 'returned'
+      };
+      generatePazYSalvo(returnedLoan);
     } catch (err) {
       console.error("Error returning book:", err);
       showNotification(
@@ -611,8 +621,333 @@ export default function LoanDashboard() {
   // (Función getStatusColor eliminada porque no se utiliza)
 
   // Obtener icono según estado del préstamo
-  // (Función eliminada porque no se utiliza) // Estadísticas
-  const stats = getStats();
+  // (Función eliminada porque no se utiliza)  // Estadísticas
+  const stats = getStats();  // Función para descargar historial de préstamos como PDF
+  const downloadLoansHistory = () => {
+    try {
+      // Crear nuevo documento PDF
+      const doc = new jsPDF();
+      
+      // Para jsPDF v3.x, necesitamos asegurar que el plugin esté disponible
+      // Si no está disponible, mostrar error
+      if (typeof doc.autoTable !== 'function') {
+        console.error('autoTable no está disponible en la instancia de jsPDF');
+        showNotification('error', 'Error: Plugin autoTable no disponible. Por favor recargue la página.');
+        
+        // Fallback: generar PDF básico sin tabla
+        const today = new Date();
+        doc.setFontSize(18);
+        doc.setTextColor(35, 102, 168);
+        doc.text('HISTORIAL DE PRÉSTAMOS', 105, 20, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Sistema de Gestión Bibliotecaria', 105, 28, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.text(`Generado el: ${today.toLocaleDateString('es-ES')}`, 105, 35, { align: 'center' });
+        
+        // Agregar información básica
+        let yPos = 50;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Resumen de préstamos:', 20, yPos);
+        yPos += 15;
+        
+        doc.setFontSize(10);
+        const stats = getStats();
+        doc.text(`Total de préstamos: ${stats.total}`, 20, yPos);
+        yPos += 8;
+        doc.text(`Préstamos activos: ${stats.active}`, 20, yPos);
+        yPos += 8;
+        doc.text(`Préstamos vencidos: ${stats.overdue}`, 20, yPos);
+        yPos += 8;
+        doc.text(`Préstamos devueltos: ${stats.returned}`, 20, yPos);
+        
+        // Listar préstamos de forma simple
+        yPos += 20;
+        doc.text('Lista de préstamos:', 20, yPos);
+        yPos += 10;
+        
+        filteredLoans.slice(0, 20).forEach((loan, index) => { // Limitar a 20 para evitar overflow
+          const loanText = `${index + 1}. ${loan.book_title} - ${loan.user_name} (${loan.status === 'active' ? 'Activo' : loan.status === 'overdue' ? 'Vencido' : 'Devuelto'})`;
+          doc.text(loanText, 20, yPos);
+          yPos += 6;
+          
+          if (yPos > 250) { // Evitar overflow de página
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+        
+        const fileName = `historial_prestamos_simple_${today.toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        showNotification('success', 'Historial descargado como PDF básico');
+        return;
+      }
+      
+      const today = new Date();
+      
+      // Configurar título
+      doc.setFontSize(18);
+      doc.setTextColor(35, 102, 168); // Color azul del sistema
+      doc.text('HISTORIAL DE PRÉSTAMOS', 105, 20, { align: 'center' });
+      
+      // Subtítulo
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Sistema de Gestión Bibliotecaria', 105, 28, { align: 'center' });
+      
+      // Fecha de generación
+      doc.setFontSize(10);
+      doc.text(`Generado el: ${today.toLocaleDateString('es-ES')} a las ${today.toLocaleTimeString('es-ES')}`, 105, 35, { align: 'center' });
+      
+      // Preparar datos para la tabla
+      const tableData = filteredLoans.map(loan => [
+        loan.loan_id.toString(),
+        loan.book_title || 'Sin título',
+        loan.user_name || 'Sin usuario',
+        new Date(loan.loan_date).toLocaleDateString('es-ES'),
+        loan.return_date ? new Date(loan.return_date).toLocaleDateString('es-ES') : 'No definida',
+        loan.actual_return_date ? new Date(loan.actual_return_date).toLocaleDateString('es-ES') : 'No devuelto',
+        loan.status === 'active' ? 'Activo' : loan.status === 'overdue' ? 'Vencido' : 'Devuelto',
+        loan.status === 'overdue' && loan.return_date ? 
+          Math.ceil((new Date() - new Date(loan.return_date)) / (1000 * 60 * 60 * 24)).toString() : '0'
+      ]);
+
+      // Configurar tabla
+      doc.autoTable({
+        head: [[
+          'ID',
+          'Libro',
+          'Usuario',
+          'Fecha Préstamo',
+          'Fecha Devolución',
+          'Fecha Real',
+          'Estado',
+          'Días Retraso'
+        ]],
+        body: tableData,
+        startY: 45,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [35, 102, 168],
+          textColor: [255, 255, 255],
+          fontSize: 9,
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fontSize: 8,
+          cellPadding: 2
+        },
+        columnStyles: {
+          0: { cellWidth: 15 }, // ID
+          1: { cellWidth: 35 }, // Libro
+          2: { cellWidth: 30 }, // Usuario
+          3: { cellWidth: 20 }, // Fecha Préstamo
+          4: { cellWidth: 20 }, // Fecha Devolución
+          5: { cellWidth: 20 }, // Fecha Real
+          6: { cellWidth: 18 }, // Estado
+          7: { cellWidth: 15 }  // Días Retraso
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        didParseCell: function(data) {
+          // Colorear filas según el estado
+          if (data.section === 'body') {
+            const status = tableData[data.row.index][6];
+            if (status === 'Vencido') {
+              data.cell.styles.textColor = [220, 38, 38]; // Rojo
+            } else if (status === 'Devuelto') {
+              data.cell.styles.textColor = [34, 197, 94]; // Verde
+            }
+          }
+        }
+      });
+
+      // Agregar resumen estadístico
+      const stats = getStats();
+      const finalY = doc.lastAutoTable.finalY + 10;
+      
+      doc.setFontSize(12);
+      doc.setTextColor(35, 102, 168);
+      doc.text('RESUMEN ESTADÍSTICO', 20, finalY);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total de préstamos: ${stats.total}`, 20, finalY + 8);
+      doc.text(`Préstamos activos: ${stats.active}`, 20, finalY + 16);
+      doc.text(`Préstamos vencidos: ${stats.overdue}`, 20, finalY + 24);
+      doc.text(`Préstamos devueltos: ${stats.returned}`, 20, finalY + 32);
+
+      // Agregar pie de página
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Sistema de Gestión Bibliotecaria', 105, pageHeight - 10, { align: 'center' });
+      doc.text(`© ${today.getFullYear()}`, 105, pageHeight - 5, { align: 'center' });
+
+      // Descargar el PDF
+      const fileName = `historial_prestamos_${today.toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+
+      showNotification('success', 'Historial de préstamos descargado exitosamente como PDF');
+    } catch (error) {
+      console.error('Error al generar PDF del historial:', error);
+      showNotification('error', 'Error al generar el PDF del historial de préstamos');
+    }
+  };
+  // Función para generar paz y salvo individual en PDF
+  const generatePazYSalvo = (loan) => {
+    try {
+      const today = new Date();
+      const isReturned = loan.actual_return_date;
+      const isOverdue = !isReturned && loan.return_date && new Date(loan.return_date) < today;
+      
+      // Crear nuevo documento PDF
+      const doc = new jsPDF();
+      
+      // Configurar colores del sistema
+      const primaryColor = [35, 102, 168]; // #2366a8
+      const successColor = [21, 87, 36]; // #155724
+      const warningColor = [133, 100, 4]; // #856404
+      const dangerColor = [114, 28, 36]; // #721c24
+      
+      // Encabezado del documento
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, 210, 25, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PAZ Y SALVO', 105, 15, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Sistema de Gestión Bibliotecaria', 105, 20, { align: 'center' });
+      
+      // Resetear color de texto
+      doc.setTextColor(0, 0, 0);
+      
+      // Título de la sección
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...primaryColor);
+      doc.text('Información del Préstamo', 20, 40);
+      
+      // Información del préstamo
+      const startY = 50;
+      let currentY = startY;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      
+      const loanInfo = [
+        ['ID de Préstamo:', `#${loan.loan_id}`],
+        ['Libro:', loan.book_title],
+        ['Usuario:', loan.user_name],
+        ['Fecha de Préstamo:', new Date(loan.loan_date).toLocaleDateString('es-ES')],
+        ['Fecha de Devolución Esperada:', loan.return_date ? new Date(loan.return_date).toLocaleDateString('es-ES') : 'No definida'],
+        ['Fecha de Devolución Real:', loan.actual_return_date ? new Date(loan.actual_return_date).toLocaleDateString('es-ES') : 'Pendiente']
+      ];
+      
+      loanInfo.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text(label, 20, currentY);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        const labelWidth = doc.getTextWidth(label);
+        doc.text(value, 25 + labelWidth, currentY);
+        
+        // Línea divisoria
+        doc.setDrawColor(220, 220, 220);
+        doc.line(20, currentY + 2, 190, currentY + 2);
+        
+        currentY += 12;
+      });
+      
+      // Estado del préstamo
+      currentY += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      
+      let statusText, statusColor;
+      if (isReturned) {
+        statusText = '✅ LIBRO DEVUELTO - PAZ Y SALVO OTORGADO';
+        statusColor = successColor;
+      } else if (isOverdue) {
+        statusText = '⚠️ PRÉSTAMO VENCIDO - PENDIENTE DE DEVOLUCIÓN';
+        statusColor = dangerColor;
+      } else {
+        statusText = '📖 PRÉSTAMO ACTIVO';
+        statusColor = warningColor;
+      }
+      
+      // Caja de estado
+      doc.setFillColor(...statusColor);
+      doc.roundedRect(20, currentY - 5, 170, 15, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text(statusText, 105, currentY + 2, { align: 'center' });
+      
+      // Mensaje de certificación
+      currentY += 25;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      
+      let certificationMessage;
+      if (isReturned) {
+        doc.setTextColor(...successColor);
+        certificationMessage = 'Se certifica que el usuario ha devuelto el material bibliográfico en buen estado y se encuentra a paz y salvo con la biblioteca.';
+      } else if (isOverdue) {
+        doc.setTextColor(...dangerColor);
+        certificationMessage = 'ATENCIÓN: Este préstamo se encuentra vencido. Se requiere la devolución inmediata del material.';
+      } else {
+        doc.setTextColor(...warningColor);
+        certificationMessage = 'Préstamo activo. El material debe ser devuelto en la fecha indicada.';
+      }
+      
+      const splitText = doc.splitTextToSize(certificationMessage, 170);
+      doc.text(splitText, 105, currentY, { align: 'center' });
+      
+      // Área de firmas (solo si está devuelto)
+      if (isReturned) {
+        currentY += splitText.length * 5 + 20;
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        
+        // Líneas de firma
+        doc.line(40, currentY, 100, currentY); // Firma bibliotecario
+        doc.line(110, currentY, 170, currentY); // Firma usuario
+        
+        doc.text('Firma del Bibliotecario', 70, currentY + 8, { align: 'center' });
+        doc.text('Firma del Usuario', 140, currentY + 8, { align: 'center' });
+      }
+      
+      // Pie de página
+      const footerY = 280;
+      doc.setDrawColor(...primaryColor);
+      doc.line(20, footerY - 5, 190, footerY - 5);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(102, 102, 102);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Documento generado el ${today.toLocaleDateString('es-ES')} a las ${today.toLocaleTimeString('es-ES')}`, 105, footerY, { align: 'center' });
+      doc.text(`Sistema de Gestión Bibliotecaria © ${today.getFullYear()}`, 105, footerY + 5, { align: 'center' });
+      
+      // Descargar el PDF
+      const fileName = `paz_y_salvo_prestamo_${loan.loan_id}_${today.toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      showNotification('success', `Paz y salvo del préstamo #${loan.loan_id} generado exitosamente como PDF`);
+    } catch (error) {
+      console.error('Error al generar paz y salvo PDF:', error);
+      showNotification('error', 'Error al generar el PDF del paz y salvo');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e3f0fb] via-[#f7fafc] to-[#e3f0fb] p-4 md:p-8">
@@ -734,21 +1069,29 @@ export default function LoanDashboard() {
               Administra los préstamos de tu biblioteca. Registra nuevos
               préstamos y devoluciones.
             </p>
+          </div>          <div className="flex gap-3">
+            <button
+              className="flex items-center bg-gradient-to-r from-[#28a745] to-[#20c997] hover:from-[#218838] hover:to-[#1ea085] text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#28a745] focus:ring-offset-2"
+              onClick={downloadLoansHistory}
+              title="Descargar historial completo de préstamos"
+            >
+              <FaDownload className="mr-2" /> Historial
+            </button>
+            <button
+              className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] hover:from-[#1d5a9a] hover:to-[#5a9de0] text-white px-5 py-3 rounded-lg shadow-md transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
+              onClick={() => {
+                setShowForm(true);
+                setEditLoan(null);
+                resetForm();
+                // Scroll al formulario
+                setTimeout(() => {
+                  formRef.current?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              }}
+            >
+              <FaPlus className="mr-2" /> Nuevo Préstamo
+            </button>
           </div>
-          <button
-            className="flex items-center bg-gradient-to-r from-[#2366a8] to-[#79b2e9] hover:from-[#1d5a9a] hover:to-[#5a9de0] text-white px-5 py-3 rounded-lg shadow-md transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#2366a8] focus:ring-offset-2"
-            onClick={() => {
-              setShowForm(true);
-              setEditLoan(null);
-              resetForm();
-              // Scroll al formulario
-              setTimeout(() => {
-                formRef.current?.scrollIntoView({ behavior: "smooth" });
-              }, 100);
-            }}
-          >
-            <FaPlus className="mr-2" /> Nuevo Préstamo
-          </button>
         </div>
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -1178,9 +1521,7 @@ export default function LoanDashboard() {
                       </span>
                     </div>
                   )}
-                </div>
-
-                <div className="flex justify-center  mt-4 pt-4 border-t border-gray-100 h-auto">
+                </div>                <div className="flex justify-center  mt-4 pt-4 border-t border-gray-100 h-auto">
                   {loan.status === "returned" ? (
                     // Botón para libros ya devueltos (deshabilitado pero visible)
                     <button
@@ -1204,6 +1545,16 @@ export default function LoanDashboard() {
                       <FaUndo className="ml-2" />
                     </button>
                   )}
+                  
+                  {/* Botón de Paz y Salvo */}
+                  <button
+                    className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors grow-0"
+                    onClick={() => generatePazYSalvo(loan)}
+                    title={`Generar paz y salvo para préstamo #${loan.loan_id}`}
+                  >
+                    <FaFileAlt />
+                  </button>
+                  
                   <button
                     className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors grow-0"
                     onClick={() => {

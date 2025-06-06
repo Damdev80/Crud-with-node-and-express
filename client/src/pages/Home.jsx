@@ -257,39 +257,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
-      {/* Animación de entrada */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: none;
-          }
-        }
-        .container > * {
-          animation: fade-in 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-          animation-fill-mode: both;
-        }
-        .container > *:nth-child(1) {
-          animation-delay: 0.1s;
-        }
-        .container > *:nth-child(2) {
-          animation-delay: 0.3s;
-        }
-        .container > *:nth-child(3) {
-          animation-delay: 0.5s;
-        }
-        .container > *:nth-child(4) {
-          animation-delay: 0.7s;
-        }
-        .container > *:nth-child(5) {
-          animation-delay: 0.9s;
-        }
-      `}</style>
     </div>
   )
 }
