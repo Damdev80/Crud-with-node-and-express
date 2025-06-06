@@ -12,7 +12,13 @@ export default defineConfig({
       output: {
         manualChunks: undefined
       }
+    },
+    commonjsOptions: {
+      include: [/jspdf/, /node_modules/]
     }
+  },
+  optimizeDeps: {
+    include: ['jspdf', 'jspdf-autotable']
   },
   base: '/'
 })
