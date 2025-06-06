@@ -26,6 +26,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { getAuthHeaders } from "../utils/authHeaders.js";
+import { getCategories } from "../services/filterService.js";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -37,10 +38,10 @@ export default function LoanDashboard() {
   const [filteredLoans, setFilteredLoans] = useState([]);
   const [_isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editLoan, setEditLoan] = useState(null);
+  const [showForm, setShowForm] = useState(false);  const [editLoan, setEditLoan] = useState(null);
   const [books, setBooks] = useState([]);
   const [users, setUsers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [notification, setNotification] = useState({
     show: false,
     type: "",
@@ -49,6 +50,7 @@ export default function LoanDashboard() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmReturn, setConfirmReturn] = useState(null);  const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
   const [dateFilter, setDateFilter] = useState({
     startDate: "",
     endDate: "",
@@ -86,15 +88,14 @@ export default function LoanDashboard() {
         "🔄 [LOAD] Usuario actual:",
         JSON.parse(localStorage.getItem("user") || "{}")
       );
-      console.log("🔄 [LOAD] Autenticación disponible:", getAuthHeaders());
-
-      const booksData = await fetchBooks();
+      console.log("🔄 [LOAD] Autenticación disponible:", getAuthHeaders());      const booksData = await fetchBooks();
       console.log("📚 [LOAD] Books obtenidos:", booksData.length);
 
       const usersData = await fetchUsers();
-      console.log("👥 [LOAD] Users obtenidos:", usersData.length);
+      console.log("👥 [LOAD] Users obtenidos:", usersData.length);      const categoriesData = await fetchCategories();
+      console.log("🏷️ [LOAD] Categories obtenidas:", categoriesData.length);
 
-      await fetchLoans(booksData, usersData);
+      await fetchLoans(booksData, usersData, categoriesData);
       console.log("✅ [LOAD] Carga de datos completada");
       console.log(
         "📊 [LOAD] Estado final - loans:",
@@ -107,12 +108,12 @@ export default function LoanDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);  // Filter & sort when data or filters change
   useEffect(() => {
-    console.log("🔍 [FILTER-EFFECT] Ejecutando effect...");
-    console.log("🔍 [FILTER-EFFECT] Estado actual:", {
+    console.log("🔍 [FILTER-EFFECT] Ejecutando effect...");    console.log("🔍 [FILTER-EFFECT] Estado actual:", {
       loansLength: loans.length,
       filteredLoansLength: filteredLoans.length,
       searchTerm,
       filterStatus,
+      filterCategory,
       dateFilter,
     });
 
@@ -124,9 +125,8 @@ export default function LoanDashboard() {
         "🔍 [FILTER-EFFECT] No hay loans, limpiando filteredLoans..."
       );
       setFilteredLoans([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loans, searchTerm, filterStatus, dateFilter, sortConfig]);
+    }    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loans, searchTerm, filterStatus, filterCategory, dateFilter, sortConfig]);
   // Redirect unauthorized users
   if (!isLibrarianOrAdmin()) {
     console.log("🚫 [AUTH] Usuario no autorizado, redirigiendo...");
@@ -221,21 +221,37 @@ export default function LoanDashboard() {
         type: "error",
         message: `Error al cargar usuarios: ${err.message}`,
       });
-      setUsers([]);
+      setUsers([]);      return [];
+    }
+  };
+
+  // Función para obtener categorías
+  const fetchCategories = async () => {
+    try {
+      const res = await getCategories();
+      const categoriesArray = Array.isArray(res) ? res : res.data || [];
+      setCategories(categoriesArray);
+      console.log("🏷️ [CATEGORIES] Categorías cargadas:", categoriesArray.length);
+      return categoriesArray;
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setCategories([]);
       return [];
     }
   };
   // Función para obtener préstamos (ahora recibe books/users)
-  const fetchLoans = async (booksArg = books, usersArg = users) => {
+  const fetchLoans = async (booksArg = books, usersArg = users, categoriesArg = categories) => {
     setIsLoading(true);
     setError(null);
 
     // Asegurar que tenemos arrays válidos
     const validBooks = Array.isArray(booksArg) ? booksArg : [];
     const validUsers = Array.isArray(usersArg) ? usersArg : [];
+    const validCategories = Array.isArray(categoriesArg) ? categoriesArg : [];
 
     console.log("📚 [LOANS] Libros disponibles:", validBooks.length);
     console.log("👥 [LOANS] Usuarios disponibles:", validUsers.length);
+    console.log("🏷️ [LOANS] Categorías disponibles:", validCategories.length);
 
     try {
       // Obtener el usuario actual del localStorage para autenticación
@@ -264,15 +280,17 @@ export default function LoanDashboard() {
         const returnDate = loan.return_date ? new Date(loan.return_date) : null;
         let status = "active";
         if (loan.actual_return_date) status = "returned";
-        else if (returnDate && returnDate < today) status = "overdue";
-
-        const book = validBooks.find((b) => b.book_id === loan.book_id);
+        else if (returnDate && returnDate < today) status = "overdue";        const book = validBooks.find((b) => b.book_id === loan.book_id);
         const user = validUsers.find((u) => u.user_id === loan.user_id);
+        const category = book ? validCategories.find((c) => c.category_id === book.category_id) : null;
+        
         return {
           ...loan,
           status,
           book_title: book ? book.title : `Libro #${loan.book_id}`,
           user_name: user ? user.name : `Usuario #${loan.user_id}`,
+          category_id: book ? book.category_id : null,
+          category_name: category ? category.name : null,
         };
       });
 
@@ -280,9 +298,7 @@ export default function LoanDashboard() {
       setLoans(enrichedLoans);
       console.log(
         "🔄 [LOANS] Estado loans actualizado, triggering filter effect..."
-      );
-
-      // IMMEDIATE FIX: Call filter directly since useEffect might not trigger immediately
+      );      // IMMEDIATE FIX: Call filter directly since useEffect might not trigger immediately
       const filtered = enrichedLoans.filter((loan) => {
         let matchesSearch = true;
         if (searchTerm) {
@@ -296,7 +312,12 @@ export default function LoanDashboard() {
           matchesStatus = loan.status === filterStatus;
         }
 
-        return matchesSearch && matchesStatus;
+        let matchesCategory = true;
+        if (filterCategory !== "all") {
+          matchesCategory = loan.category_id && String(loan.category_id) === String(filterCategory);
+        }
+
+        return matchesSearch && matchesStatus && matchesCategory;
       });
 
       console.log(
@@ -314,11 +335,11 @@ export default function LoanDashboard() {
 
   // (Función enrichLoansData eliminada porque no se utiliza)  // Filtrar y ordenar préstamos
   const filterAndSortLoans = (loansToFilter = loans) => {
-    console.log("🔍 [FILTER] Iniciando filtrado...");
-    console.log("🔍 [FILTER] Parámetros:", {
+    console.log("🔍 [FILTER] Iniciando filtrado...");    console.log("🔍 [FILTER] Parámetros:", {
       loansToFilterLength: loansToFilter.length,
       searchTerm,
       filterStatus,
+      filterCategory,
       dateFilter,
       sortConfig,
     });
@@ -334,12 +355,18 @@ export default function LoanDashboard() {
           loan.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       console.log("🔍 [FILTER] Después de búsqueda:", filtered.length);
-    }
-
-    // Aplicar filtro de estado
+    }    // Aplicar filtro de estado
     if (filterStatus !== "all") {
       filtered = filtered.filter((loan) => loan.status === filterStatus);
       console.log("🔍 [FILTER] Después de filtro de estado:", filtered.length);
+    }
+
+    // Aplicar filtro de categoría
+    if (filterCategory !== "all") {
+      filtered = filtered.filter((loan) => {
+        return loan.category_id && String(loan.category_id) === String(filterCategory);
+      });
+      console.log("🔍 [FILTER] Después de filtro de categoría:", filtered.length);
     }
 
     // Aplicar filtros de fecha
@@ -487,11 +514,11 @@ export default function LoanDashboard() {
 
       console.log("🔄 [FORM] Limpiando formulario y recargando datos...");
       setShowForm(false);
-      setEditLoan(null);
-      resetForm();
+      setEditLoan(null);      resetForm();
       const booksData = await fetchBooks();
       const usersData = await fetchUsers();
-      await fetchLoans(booksData, usersData);
+      const categoriesData = await fetchCategories();
+      await fetchLoans(booksData, usersData, categoriesData);
       console.log("✅ [FORM] Proceso completado");
     } catch (err) {
       console.error("❌ [FORM] Error saving loan:", err);
@@ -549,12 +576,11 @@ export default function LoanDashboard() {
         throw new Error(
           `Error ${res.status}: ${errorData.message || res.statusText}`
         );
-      }
-
-      showNotification("success", "Préstamo eliminado correctamente");
+      }      showNotification("success", "Préstamo eliminado correctamente");
       const booksData = await fetchBooks();
       const usersData = await fetchUsers();
-      await fetchLoans(booksData, usersData); // Espera a que termine antes de continuar
+      const categoriesData = await fetchCategories();
+      await fetchLoans(booksData, usersData, categoriesData); // Espera a que termine antes de continuar
     } catch (err) {
       console.error("Error deleting loan:", err);
       showNotification(
@@ -598,10 +624,10 @@ export default function LoanDashboard() {
         throw new Error(
           `Error ${res.status}: ${errorData.message || res.statusText}`
         );
-      }      showNotification("success", "Libro devuelto correctamente");
-      const booksData = await fetchBooks();
+      }      showNotification("success", "Libro devuelto correctamente");      const booksData = await fetchBooks();
       const usersData = await fetchUsers();
-      await fetchLoans(booksData, usersData); // Espera a que termine antes de continuar
+      const categoriesData = await fetchCategories();
+      await fetchLoans(booksData, usersData, categoriesData); // Espera a que termine antes de continuar
       
       // Generar automáticamente el PDF de paz y salvo para el préstamo devuelto
       const returnedLoan = {
@@ -736,14 +762,17 @@ export default function LoanDashboard() {
         // Fecha de generación
       doc.setFontSize(10);
       doc.text(`Generado el: ${today.toLocaleDateString('es-ES')} a las ${today.toLocaleTimeString('es-ES')}`, 105, 35, { align: 'center' });
-      
-      // Información de filtros aplicados
+        // Información de filtros aplicados
       let filterInfo = [];
       if (searchTerm) filterInfo.push(`Búsqueda: "${searchTerm}"`);
       if (filterStatus !== 'all') {
         const statusText = filterStatus === 'active' ? 'Activos' : 
                           filterStatus === 'overdue' ? 'Vencidos' : 'Devueltos';
         filterInfo.push(`Estado: ${statusText}`);
+      }
+      if (filterCategory !== 'all') {
+        const categoryName = categories.find(c => String(c.category_id) === String(filterCategory))?.name || 'Categoría desconocida';
+        filterInfo.push(`Categoría: ${categoryName}`);
       }
       if (dateFilter.startDate && dateFilter.endDate) {
         filterInfo.push(`Rango: ${new Date(dateFilter.startDate).toLocaleDateString('es-ES')} - ${new Date(dateFilter.endDate).toLocaleDateString('es-ES')}`);
@@ -1445,16 +1474,19 @@ export default function LoanDashboard() {
             )}
           </div>
 
-          <div className="flex gap-2 self-end">
-            <button
+          <div className="flex gap-2 self-end">            <button
               className="flex items-center px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
               onClick={() => setShowFilters(!showFilters)}
             >
               <FaFilter className="mr-2" />
               Filtros
-              {filterStatus !== "all" && (
+              {(filterStatus !== "all" || filterCategory !== "all" || dateFilter.month || dateFilter.year || dateFilter.startDate || dateFilter.endDate) && (
                 <span className="ml-2 bg-[#2366a8] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  1
+                  {[
+                    filterStatus !== "all",
+                    filterCategory !== "all", 
+                    dateFilter.month || dateFilter.year || dateFilter.startDate || dateFilter.endDate
+                  ].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -1483,11 +1515,11 @@ export default function LoanDashboard() {
         {showFilters && (
           <div className="bg-white rounded-xl shadow-md p-4 mb-8 animate-fade-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-700">Filtros</h3>
-              <button
+              <h3 className="font-bold text-gray-700">Filtros</h3>              <button
                 className="text-sm text-[#2366a8] hover:text-[#79b2e9]"
                 onClick={() => {
                   setFilterStatus("all");
+                  setFilterCategory("all");
                   setDateFilter({
                     startDate: "",
                     endDate: "",
@@ -1533,8 +1565,7 @@ export default function LoanDashboard() {
                   onClick={() => setFilterStatus("overdue")}
                 >
                   Vencidos
-                </button>
-                <button
+                </button>                <button
                   className={`px-4 py-2 rounded-lg flex items-center ${
                     filterStatus === "returned"
                       ? "bg-blue-600 text-white"
@@ -1544,6 +1575,25 @@ export default function LoanDashboard() {
                 >
                   Devueltos
                 </button>
+              </div>
+            </div>
+
+            {/* Filtros por Categoría */}
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-600 mb-2">Por Categoría</h4>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2366a8] bg-white min-w-[200px]"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {categories.map((category) => (
+                    <option key={category.category_id} value={category.category_id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
