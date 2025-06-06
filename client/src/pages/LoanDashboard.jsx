@@ -47,9 +47,14 @@ export default function LoanDashboard() {
     message: "",
   });
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [confirmReturn, setConfirmReturn] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [confirmReturn, setConfirmReturn] = useState(null);  const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [dateFilter, setDateFilter] = useState({
+    startDate: "",
+    endDate: "",
+    month: "",
+    year: ""
+  });
   const [sortConfig, setSortConfig] = useState({
     key: "loan_date",
     direction: "desc",
@@ -100,8 +105,7 @@ export default function LoanDashboard() {
     };
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // Filter & sort when data or filters change
+  }, []);  // Filter & sort when data or filters change
   useEffect(() => {
     console.log("🔍 [FILTER-EFFECT] Ejecutando effect...");
     console.log("🔍 [FILTER-EFFECT] Estado actual:", {
@@ -109,6 +113,7 @@ export default function LoanDashboard() {
       filteredLoansLength: filteredLoans.length,
       searchTerm,
       filterStatus,
+      dateFilter,
     });
 
     if (loans.length > 0) {
@@ -121,7 +126,7 @@ export default function LoanDashboard() {
       setFilteredLoans([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loans, searchTerm, filterStatus, sortConfig]);
+  }, [loans, searchTerm, filterStatus, dateFilter, sortConfig]);
   // Redirect unauthorized users
   if (!isLibrarianOrAdmin()) {
     console.log("🚫 [AUTH] Usuario no autorizado, redirigiendo...");
@@ -307,13 +312,14 @@ export default function LoanDashboard() {
     }
   };
 
-  // (Función enrichLoansData eliminada porque no se utiliza) // Filtrar y ordenar préstamos
+  // (Función enrichLoansData eliminada porque no se utiliza)  // Filtrar y ordenar préstamos
   const filterAndSortLoans = (loansToFilter = loans) => {
     console.log("🔍 [FILTER] Iniciando filtrado...");
     console.log("🔍 [FILTER] Parámetros:", {
       loansToFilterLength: loansToFilter.length,
       searchTerm,
       filterStatus,
+      dateFilter,
       sortConfig,
     });
 
@@ -334,6 +340,36 @@ export default function LoanDashboard() {
     if (filterStatus !== "all") {
       filtered = filtered.filter((loan) => loan.status === filterStatus);
       console.log("🔍 [FILTER] Después de filtro de estado:", filtered.length);
+    }
+
+    // Aplicar filtros de fecha
+    if (dateFilter.startDate || dateFilter.endDate || dateFilter.month || dateFilter.year) {
+      filtered = filtered.filter((loan) => {
+        const loanDate = new Date(loan.loan_date);
+        
+        // Filtro por rango de fechas
+        if (dateFilter.startDate && dateFilter.endDate) {
+          const startDate = new Date(dateFilter.startDate);
+          const endDate = new Date(dateFilter.endDate);
+          return loanDate >= startDate && loanDate <= endDate;
+        }
+        
+        // Filtro por mes y año específico
+        if (dateFilter.month && dateFilter.year) {
+          const month = parseInt(dateFilter.month) - 1; // JavaScript months are 0-indexed
+          const year = parseInt(dateFilter.year);
+          return loanDate.getMonth() === month && loanDate.getFullYear() === year;
+        }
+        
+        // Filtro solo por año
+        if (dateFilter.year && !dateFilter.month) {
+          const year = parseInt(dateFilter.year);
+          return loanDate.getFullYear() === year;
+        }
+        
+        return true;
+      });
+      console.log("🔍 [FILTER] Después de filtro de fechas:", filtered.length);
     }
 
     // Ordenar
@@ -697,10 +733,40 @@ export default function LoanDashboard() {
       doc.setFontSize(12);
       doc.setTextColor(100, 100, 100);
       doc.text('Sistema de Gestión Bibliotecaria', 105, 28, { align: 'center' });
-      
-      // Fecha de generación
+        // Fecha de generación
       doc.setFontSize(10);
       doc.text(`Generado el: ${today.toLocaleDateString('es-ES')} a las ${today.toLocaleTimeString('es-ES')}`, 105, 35, { align: 'center' });
+      
+      // Información de filtros aplicados
+      let filterInfo = [];
+      if (searchTerm) filterInfo.push(`Búsqueda: "${searchTerm}"`);
+      if (filterStatus !== 'all') {
+        const statusText = filterStatus === 'active' ? 'Activos' : 
+                          filterStatus === 'overdue' ? 'Vencidos' : 'Devueltos';
+        filterInfo.push(`Estado: ${statusText}`);
+      }
+      if (dateFilter.startDate && dateFilter.endDate) {
+        filterInfo.push(`Rango: ${new Date(dateFilter.startDate).toLocaleDateString('es-ES')} - ${new Date(dateFilter.endDate).toLocaleDateString('es-ES')}`);
+      }
+      if (dateFilter.month && dateFilter.year) {
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        filterInfo.push(`Mes: ${monthNames[parseInt(dateFilter.month) - 1]} ${dateFilter.year}`);
+      } else if (dateFilter.month) {
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        filterInfo.push(`Mes: ${monthNames[parseInt(dateFilter.month) - 1]}`);
+      } else if (dateFilter.year) {
+        filterInfo.push(`Año: ${dateFilter.year}`);
+      }
+      
+      let startY = 45;
+      if (filterInfo.length > 0) {
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text('Filtros aplicados: ' + filterInfo.join(' | '), 105, 42, { align: 'center' });
+        startY = 50;
+      }
       
       // Preparar datos para la tabla
       const tableData = filteredLoans.map(loan => [
@@ -713,9 +779,7 @@ export default function LoanDashboard() {
         loan.status === 'active' ? 'Activo' : loan.status === 'overdue' ? 'Vencido' : 'Devuelto',
         loan.status === 'overdue' && loan.return_date ? 
           Math.ceil((new Date() - new Date(loan.return_date)) / (1000 * 60 * 60 * 24)).toString() : '0'
-      ]);
-
-      // Configurar tabla
+      ]);      // Configurar tabla
       doc.autoTable({
         head: [[
           'ID',
@@ -728,7 +792,7 @@ export default function LoanDashboard() {
           'Días Retraso'
         ]],
         body: tableData,
-        startY: 45,
+        startY: startY,
         theme: 'grid',
         headStyles: {
           fillColor: [35, 102, 168],
@@ -764,10 +828,7 @@ export default function LoanDashboard() {
             }
           }
         }
-      });
-
-      // Agregar resumen estadístico
-      const stats = getStats();
+      });      // Agregar resumen estadístico
       const finalY = doc.lastAutoTable.finalY + 10;
       
       doc.setFontSize(12);
@@ -776,20 +837,41 @@ export default function LoanDashboard() {
       
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Total de préstamos: ${stats.total}`, 20, finalY + 8);
-      doc.text(`Préstamos activos: ${stats.active}`, 20, finalY + 16);
-      doc.text(`Préstamos vencidos: ${stats.overdue}`, 20, finalY + 24);
-      doc.text(`Préstamos devueltos: ${stats.returned}`, 20, finalY + 32);
+      doc.text(`Total de préstamos mostrados: ${filteredLoans.length}`, 20, finalY + 8);
+      doc.text(`Préstamos activos: ${filteredLoans.filter(l => l.status === 'active').length}`, 20, finalY + 16);
+      doc.text(`Préstamos vencidos: ${filteredLoans.filter(l => l.status === 'overdue').length}`, 20, finalY + 24);
+      doc.text(`Préstamos devueltos: ${filteredLoans.filter(l => l.status === 'returned').length}`, 20, finalY + 32);
+      
+      // Agregar información adicional si hay filtros de fecha
+      if (dateFilter.month || dateFilter.year || dateFilter.startDate || dateFilter.endDate) {
+        doc.text('Estadísticas filtradas por:', 20, finalY + 44);
+        if (dateFilter.month && dateFilter.year) {
+          const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+          doc.text(`- Mes: ${monthNames[parseInt(dateFilter.month) - 1]} ${dateFilter.year}`, 20, finalY + 52);
+        }
+        if (dateFilter.startDate && dateFilter.endDate) {
+          doc.text(`- Rango de fechas: ${new Date(dateFilter.startDate).toLocaleDateString('es-ES')} - ${new Date(dateFilter.endDate).toLocaleDateString('es-ES')}`, 20, finalY + 60);
+        }
+      }
 
       // Agregar pie de página
       const pageHeight = doc.internal.pageSize.height;
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text('Sistema de Gestión Bibliotecaria', 105, pageHeight - 10, { align: 'center' });
-      doc.text(`© ${today.getFullYear()}`, 105, pageHeight - 5, { align: 'center' });
-
-      // Descargar el PDF
-      const fileName = `historial_prestamos_${today.toISOString().split('T')[0]}.pdf`;
+      doc.text(`© ${today.getFullYear()}`, 105, pageHeight - 5, { align: 'center' });      // Descargar el PDF
+      let fileName = 'historial_prestamos';
+      if (dateFilter.month && dateFilter.year) {
+        fileName += `_${dateFilter.year}_${dateFilter.month.padStart(2, '0')}`;
+      } else if (dateFilter.year) {
+        fileName += `_${dateFilter.year}`;
+      }
+      if (filterStatus !== 'all') {
+        fileName += `_${filterStatus}`;
+      }
+      fileName += `_${today.toISOString().split('T')[0]}.pdf`;
+      
       doc.save(fileName);
 
       showNotification('success', 'Historial de préstamos descargado exitosamente como PDF');
@@ -1397,61 +1479,159 @@ export default function LoanDashboard() {
               Fecha
             </button>
           </div>
-        </div>
-        {/* Panel de filtros */}
+        </div>        {/* Panel de filtros */}
         {showFilters && (
           <div className="bg-white rounded-xl shadow-md p-4 mb-8 animate-fade-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-700">Filtrar por estado</h3>
+              <h3 className="font-bold text-gray-700">Filtros</h3>
               <button
                 className="text-sm text-[#2366a8] hover:text-[#79b2e9]"
-                onClick={() => setFilterStatus("all")}
+                onClick={() => {
+                  setFilterStatus("all");
+                  setDateFilter({
+                    startDate: "",
+                    endDate: "",
+                    month: "",
+                    year: ""
+                  });
+                }}
               >
                 Limpiar filtros
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "all"
-                    ? "bg-[#2366a8] text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                onClick={() => setFilterStatus("all")}
-              >
-                Todos
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "active"
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                onClick={() => setFilterStatus("active")}
-              >
-                Activos
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "overdue"
-                    ? "bg-red-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                onClick={() => setFilterStatus("overdue")}
-              >
-                Vencidos
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg flex items-center ${
-                  filterStatus === "returned"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                onClick={() => setFilterStatus("returned")}
-              >
-                Devueltos
-              </button>
+            {/* Filtros por Estado */}
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-600 mb-2">Por Estado</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className={`px-4 py-2 rounded-lg flex items-center ${
+                    filterStatus === "all"
+                      ? "bg-[#2366a8] text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setFilterStatus("all")}
+                >
+                  Todos
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg flex items-center ${
+                    filterStatus === "active"
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setFilterStatus("active")}
+                >
+                  Activos
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg flex items-center ${
+                    filterStatus === "overdue"
+                      ? "bg-red-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setFilterStatus("overdue")}
+                >
+                  Vencidos
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg flex items-center ${
+                    filterStatus === "returned"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setFilterStatus("returned")}
+                >
+                  Devueltos
+                </button>
+              </div>
+            </div>
+
+            {/* Filtros por Fecha */}
+            <div>
+              <h4 className="font-semibold text-gray-600 mb-3">Por Fecha</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Rango de fechas */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Fecha inicial
+                  </label>
+                  <input
+                    type="date"
+                    value={dateFilter.startDate}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      startDate: e.target.value
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2366a8]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Fecha final
+                  </label>
+                  <input
+                    type="date"
+                    value={dateFilter.endDate}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      endDate: e.target.value
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2366a8]"
+                  />
+                </div>
+                
+                {/* Filtro por mes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Mes
+                  </label>
+                  <select
+                    value={dateFilter.month}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      month: e.target.value
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2366a8]"
+                  >
+                    <option value="">Todos los meses</option>
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                </div>
+                
+                {/* Filtro por año */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Año
+                  </label>
+                  <select
+                    value={dateFilter.year}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      year: e.target.value
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2366a8]"
+                  >
+                    <option value="">Todos los años</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         )}{" "}
